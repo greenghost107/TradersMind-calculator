@@ -13,10 +13,11 @@
 <body>
     <header>
         <h1>TradersMind Calculator</h1>
-        <button id="settings-btn" class="settings-btn" aria-label="Settings">
+        <button id="pwa-install-btn" class="pwa-install-btn hidden" aria-label="Install App">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V6a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V12a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,15 17,10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
         </button>
     </header>
@@ -195,24 +196,43 @@
         </div>
     </main>
 
-    <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Settings</h2>
-                <button id="close-modal" class="close-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="input-group">
-                    <label for="default-account-size">Default Account Size ($)</label>
-                    <input type="number" id="default-account-size" step="1" min="1">
+    <!-- PWA Installation Modal -->
+    <div id="pwa-install-modal" class="pwa-modal hidden">
+        <div class="pwa-modal-content">
+            <div class="pwa-modal-header">
+                <div class="pwa-app-info">
+                    <img src="icons/icon-192.png" alt="TradersMind Calculator" class="pwa-app-icon">
+                    <div class="pwa-app-details">
+                        <h2>TradersMind Calculator</h2>
+                        <p>Mobile trading position calculator</p>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="default-max-positions">Default Amount of Positions</label>
-                    <input type="number" id="default-max-positions" step="1" min="1" max="50" value="10">
+                <button id="pwa-close-btn" class="pwa-close-btn" aria-label="Close">×</button>
+            </div>
+            <div class="pwa-modal-body">
+                <div class="pwa-benefits">
+                    <h3>📱 Add to Home Screen</h3>
+                    <ul>
+                        <li>✅ Instant access from your home screen</li>
+                        <li>✅ Works offline</li>
+                        <li>✅ No app store required</li>
+                        <li>✅ Always stays up-to-date</li>
+                    </ul>
+                </div>
+                <div class="pwa-instructions" id="pwa-instructions">
+                    <p>Click the button below to install this app on your device:</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button id="save-settings" class="btn-primary">Save Settings</button>
+            <div class="pwa-modal-footer">
+                <button id="pwa-install-action" class="pwa-install-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Add to Home Screen
+                </button>
+                <button id="pwa-later-btn" class="pwa-later-button">Maybe Later</button>
             </div>
         </div>
     </div>

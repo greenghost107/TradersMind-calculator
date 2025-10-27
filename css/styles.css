@@ -35,7 +35,7 @@ header h1 {
     font-weight: 600;
 }
 
-.settings-btn {
+.pwa-install-btn {
     background: none;
     border: none;
     color: white;
@@ -50,9 +50,179 @@ header h1 {
     min-height: 44px;
 }
 
-.settings-btn:hover, .settings-btn:focus {
+.pwa-install-btn:hover, .pwa-install-btn:focus {
     background-color: rgba(255, 255, 255, 0.1);
     outline: none;
+}
+
+.pwa-install-btn.hidden {
+    display: none;
+}
+
+/* PWA Installation Modal */
+.pwa-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.pwa-modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pwa-modal-content {
+    background-color: #2a2a2a;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 420px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transform: translateY(0);
+    transition: transform 0.3s ease;
+}
+
+.pwa-modal.hidden .pwa-modal-content {
+    transform: translateY(20px);
+}
+
+.pwa-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pwa-app-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.pwa-app-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.pwa-app-details h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #ffffff;
+}
+
+.pwa-app-details p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.875rem;
+    color: #b0b0b0;
+}
+
+.pwa-close-btn {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.pwa-close-btn:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-modal-body {
+    padding: 1.5rem;
+}
+
+.pwa-benefits h3 {
+    margin: 0 0 1rem 0;
+    color: #ffffff;
+    font-size: 1.125rem;
+}
+
+.pwa-benefits ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+}
+
+.pwa-benefits li {
+    padding: 0.5rem 0;
+    color: #e0e0e0;
+    font-size: 0.875rem;
+}
+
+.pwa-instructions p {
+    margin: 0;
+    color: #b0b0b0;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.pwa-modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #444;
+    display: flex;
+    gap: 0.75rem;
+    flex-direction: column;
+}
+
+.pwa-install-button {
+    background-color: #2196f3;
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+    min-height: 48px;
+}
+
+.pwa-install-button:hover {
+    background-color: #1976d2;
+}
+
+.pwa-later-button {
+    background: none;
+    border: 1px solid #444;
+    color: #b0b0b0;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    min-height: 44px;
+}
+
+.pwa-later-button:hover {
+    border-color: #666;
+    color: #ffffff;
 }
 
 /* Main Content */
@@ -237,106 +407,6 @@ select {
     color: #ff9800;
 }
 
-/* Modal Styles */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    animation: fadeIn 0.2s ease-out;
-}
-
-.modal.show {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.modal-content {
-    background-color: #2a2a2a;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 90vh;
-    overflow-y: auto;
-    animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #444;
-}
-
-.modal-header h2 {
-    font-size: 1.25rem;
-    margin: 0;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: #b0b0b0;
-    font-size: 1.75rem;
-    cursor: pointer;
-    padding: 0;
-    min-width: 44px;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: color 0.2s, background-color 0.2s;
-}
-
-.close-btn:hover, .close-btn:focus {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.1);
-    outline: none;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-footer {
-    padding: 1.5rem;
-    border-top: 1px solid #444;
-    text-align: right;
-}
-
-.btn-primary {
-    background-color: #2196f3;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    min-height: 44px;
-}
-
-.btn-primary:hover, .btn-primary:focus {
-    background-color: #1976d2;
-    outline: none;
-}
 
 /* Install FAB */
 .install-fab {

@@ -42,14 +42,7 @@ class TradersMindApp {
             atrPositionValueDisplay: document.getElementById('atr-position-value-display'),
             positionDifference: document.getElementById('position-difference'),
             volatilityImpact: document.getElementById('volatility-impact'),
-            positionValidation: document.getElementById('position-validation'),
-            
-            settingsBtn: document.getElementById('settings-btn'),
-            settingsModal: document.getElementById('settings-modal'),
-            closeModal: document.getElementById('close-modal'),
-            defaultAccountSize: document.getElementById('default-account-size'),
-            defaultMaxPositions: document.getElementById('default-max-positions'),
-            saveSettings: document.getElementById('save-settings')
+            positionValidation: document.getElementById('position-validation')
         };
     }
 
@@ -69,32 +62,6 @@ class TradersMindApp {
             if (element) {
                 element.addEventListener('input', this.debounce(() => this.handleInputChange(), 300));
                 element.addEventListener('change', () => this.handleInputChange());
-            }
-        });
-
-        if (this.elements.settingsBtn) {
-            this.elements.settingsBtn.addEventListener('click', () => this.openSettings());
-        }
-
-        if (this.elements.closeModal) {
-            this.elements.closeModal.addEventListener('click', () => this.closeSettings());
-        }
-
-        if (this.elements.settingsModal) {
-            this.elements.settingsModal.addEventListener('click', (e) => {
-                if (e.target === this.elements.settingsModal) {
-                    this.closeSettings();
-                }
-            });
-        }
-
-        if (this.elements.saveSettings) {
-            this.elements.saveSettings.addEventListener('click', () => this.saveSettingsData());
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeSettings();
             }
         });
 
@@ -265,24 +232,12 @@ class TradersMindApp {
     }
 
     loadSavedData() {
-        const settings = this.storage.loadSettings();
-        this.applySettings(settings);
-
         const calculationData = this.storage.loadCalculationData();
         if (calculationData) {
             this.restoreCalculationInputs(calculationData);
         }
 
         this.calculate();
-    }
-
-    applySettings(settings) {
-        if (this.elements.accountSize) {
-            this.elements.accountSize.value = settings.accountSize || '';
-        }
-        if (this.elements.maxPositions) {
-            this.elements.maxPositions.value = settings.maxPositions || 10;
-        }
     }
 
     restoreCalculationInputs(data) {
@@ -317,51 +272,6 @@ class TradersMindApp {
         };
 
         this.storage.saveCalculationData(calculationData);
-    }
-
-    openSettings() {
-        const settings = this.storage.loadSettings();
-        
-        if (this.elements.defaultAccountSize) {
-            this.elements.defaultAccountSize.value = settings.accountSize || '';
-        }
-        if (this.elements.defaultMaxPositions) {
-            this.elements.defaultMaxPositions.value = settings.maxPositions || 10;
-        }
-
-        this.elements.settingsModal.classList.add('show');
-        this.elements.settingsModal.style.display = 'flex';
-        
-        setTimeout(() => {
-            if (this.elements.defaultAccountSize) {
-                this.elements.defaultAccountSize.focus();
-            }
-        }, 100);
-    }
-
-    closeSettings() {
-        this.elements.settingsModal.classList.remove('show');
-        
-        setTimeout(() => {
-            this.elements.settingsModal.style.display = 'none';
-        }, 200);
-    }
-
-    saveSettingsData() {
-        const newSettings = {
-            accountSize: parseFloat(this.elements.defaultAccountSize.value) || 10000,
-            maxPositions: parseInt(this.elements.defaultMaxPositions.value) || 10
-        };
-
-        const success = this.storage.saveSettings(newSettings);
-        
-        if (success) {
-            this.applySettings(newSettings);
-            this.calculate();
-            this.closeSettings();
-        } else {
-            this.showError('Failed to save settings');
-        }
     }
 }
 

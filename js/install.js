@@ -17,6 +17,12 @@ class PWAInstaller {
 
     bindElements() {
         this.installButton = document.getElementById('install-btn');
+        this.headerInstallButton = document.getElementById('pwa-install-btn');
+        this.pwaModal = document.getElementById('pwa-install-modal');
+        this.pwaCloseBtn = document.getElementById('pwa-close-btn');
+        this.pwaInstallAction = document.getElementById('pwa-install-action');
+        this.pwaLaterBtn = document.getElementById('pwa-later-btn');
+        this.pwaInstructions = document.getElementById('pwa-instructions');
     }
 
     async registerServiceWorker() {
@@ -84,6 +90,39 @@ class PWAInstaller {
             });
         }
 
+        if (this.headerInstallButton) {
+            this.headerInstallButton.addEventListener('click', () => {
+                this.showInstallModal();
+            });
+        }
+
+        if (this.pwaCloseBtn) {
+            this.pwaCloseBtn.addEventListener('click', () => {
+                this.hideInstallModal();
+            });
+        }
+
+        if (this.pwaInstallAction) {
+            this.pwaInstallAction.addEventListener('click', () => {
+                this.hideInstallModal();
+                this.showInstallPrompt();
+            });
+        }
+
+        if (this.pwaLaterBtn) {
+            this.pwaLaterBtn.addEventListener('click', () => {
+                this.hideInstallModal();
+            });
+        }
+
+        if (this.pwaModal) {
+            this.pwaModal.addEventListener('click', (e) => {
+                if (e.target === this.pwaModal) {
+                    this.hideInstallModal();
+                }
+            });
+        }
+
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) {
                 this.checkInstallationStatus();
@@ -119,30 +158,46 @@ class PWAInstaller {
         }
     }
 
-    showManualInstallInstructions() {
+    showInstallModal() {
+        if (!this.pwaModal) return;
+        
+        this.updateModalInstructions();
+        this.pwaModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideInstallModal() {
+        if (!this.pwaModal) return;
+        
+        this.pwaModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    updateModalInstructions() {
+        if (!this.pwaInstructions) return;
+        
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isAndroid = /Android/.test(navigator.userAgent);
         
-        let instructions = '';
+        let instructionText = '';
         
-        if (isIOS) {
-            instructions = `To install this app on iOS:
-1. Tap the Share button in Safari
-2. Scroll down and tap "Add to Home Screen"
-3. Tap "Add" to confirm`;
-        } else if (isAndroid) {
-            instructions = `To install this app on Android:
-1. Tap the menu (three dots) in your browser
-2. Select "Add to Home screen" or "Install app"
-3. Tap "Add" or "Install" to confirm`;
+        if (!this.deferredPrompt) {
+            if (isIOS) {
+                instructionText = `To install on iOS:<br>1. Tap the Share button <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92S19.61 16.08 18 16.08z"/></svg><br>2. Scroll down and tap "Add to Home Screen"<br>3. Tap "Add" to confirm`;
+            } else if (isAndroid) {
+                instructionText = `To install on Android:<br>1. Tap the menu (⋮) in your browser<br>2. Select "Add to Home screen" or "Install app"<br>3. Tap "Add" or "Install" to confirm`;
+            } else {
+                instructionText = `To install this app:<br>1. Look for an install icon in your browser's address bar<br>2. Or check your browser's menu for "Install" or "Add to Home Screen"<br>3. Follow the prompts to install`;
+            }
         } else {
-            instructions = `To install this app:
-1. Look for an install icon in your browser's address bar
-2. Or check your browser's menu for "Install" or "Add to Home Screen"
-3. Follow the prompts to install`;
+            instructionText = 'Click "Add to Home Screen" below to install this app on your device.';
         }
         
-        alert(instructions);
+        this.pwaInstructions.innerHTML = `<p>${instructionText}</p>`;
+    }
+
+    showManualInstallInstructions() {
+        this.showInstallModal();
     }
 
     checkInstallationStatus() {
@@ -160,19 +215,31 @@ class PWAInstaller {
     }
 
     updateInstallButtonVisibility() {
-        if (!this.installButton) return;
-
         const shouldShow = this.isInstallable && !this.isInstalled;
         
-        if (shouldShow) {
-            this.installButton.classList.remove('hidden');
-            this.installButton.setAttribute('aria-hidden', 'false');
-        } else {
-            this.installButton.classList.add('hidden');
-            this.installButton.setAttribute('aria-hidden', 'true');
+        // Update floating action button
+        if (this.installButton) {
+            if (shouldShow) {
+                this.installButton.classList.remove('hidden');
+                this.installButton.setAttribute('aria-hidden', 'false');
+            } else {
+                this.installButton.classList.add('hidden');
+                this.installButton.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        // Update header install button
+        if (this.headerInstallButton) {
+            if (shouldShow) {
+                this.headerInstallButton.classList.remove('hidden');
+                this.headerInstallButton.setAttribute('aria-hidden', 'false');
+            } else {
+                this.headerInstallButton.classList.add('hidden');
+                this.headerInstallButton.setAttribute('aria-hidden', 'true');
+            }
         }
         
-        console.log(`[PWAInstaller] Install button visibility: ${shouldShow ? 'visible' : 'hidden'}`);
+        console.log(`[PWAInstaller] Install buttons visibility: ${shouldShow ? 'visible' : 'hidden'}`);
     }
 
     trackInstallEvent() {
