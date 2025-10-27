@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2196f3">
+    <title>TradersMind Calculator</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>TradersMind Calculator</h1>
+        <button id="settings-btn" class="settings-btn" aria-label="Settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V6a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V12a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+    </header>
+
+    <main>
+        <div class="input-section">
+            <div class="input-group">
+                <label for="entry-price">Entry Price ($) *</label>
+                <input type="number" id="entry-price" step="0.01" min="0" required>
+            </div>
+
+            <div class="input-group">
+                <label for="stop-loss">Stop Loss ($) *</label>
+                <input type="number" id="stop-loss" step="0.01" min="0" required>
+            </div>
+
+            <div class="input-group">
+                <label for="target-price">Expected Target ($) *</label>
+                <input type="number" id="target-price" step="0.01" min="0" required>
+            </div>
+
+            <div class="input-group">
+                <label for="setup-quality">Setup Quality</label>
+                <select id="setup-quality">
+                    <option value="excellent">Excellent</option>
+                    <option value="good" selected>Good</option>
+                    <option value="average">Average</option>
+                    <option value="poor">Poor</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="market-condition">Market Condition</label>
+                <select id="market-condition">
+                    <option value="bullish">Bullish</option>
+                    <option value="neutral" selected>Neutral</option>
+                    <option value="bearish">Bearish</option>
+                    <option value="volatile">Volatile</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="account-section">
+            <div class="input-group">
+                <label for="account-size">Account Size ($) *</label>
+                <input type="number" id="account-size" step="1" min="1" required>
+            </div>
+
+            <div class="input-group">
+                <label for="max-position">Max Position Size (%)</label>
+                <input type="number" id="max-position" step="0.1" min="0.1" max="100" value="6">
+            </div>
+        </div>
+
+        <div class="results-section">
+            <div class="result-card">
+                <h3>Risk/Reward Ratio</h3>
+                <div id="risk-reward" class="result-value">-</div>
+            </div>
+
+            <div class="result-card">
+                <h3>Position Size</h3>
+                <div id="position-size" class="result-value">-</div>
+            </div>
+
+            <div class="result-card">
+                <h3>Risk Amount</h3>
+                <div id="risk-amount" class="result-value">-</div>
+            </div>
+
+            <div class="result-card">
+                <h3>Potential Profit</h3>
+                <div id="potential-profit" class="result-value">-</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="default-account-size">Default Account Size ($)</label>
+                    <input type="number" id="default-account-size" step="1" min="1">
+                </div>
+                <div class="input-group">
+                    <label for="default-max-position">Default Max Position (%)</label>
+                    <input type="number" id="default-max-position" step="0.1" min="0.1" max="100" value="6">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings" class="btn-primary">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="install-btn" class="install-fab" aria-label="Install App">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7,10 12,15 17,10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+    </button>
+
+    <footer>
+        <p>v1.0.0 | TradersMind Calculator</p>
+    </footer>
+
+    <script src="js/calculator.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/install.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
