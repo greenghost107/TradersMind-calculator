@@ -22,6 +22,18 @@
     </header>
 
     <main>
+        <div class="account-section">
+            <div class="input-group">
+                <label for="account-size">Account Size ($) *</label>
+                <input type="number" id="account-size" step="1" min="1" required>
+            </div>
+
+            <div class="input-group">
+                <label for="max-positions">Amount of Positions</label>
+                <input type="number" id="max-positions" step="1" min="1" max="50" value="10">
+            </div>
+        </div>
+
         <div class="input-section">
             <div class="input-group">
                 <label for="entry-price">Entry Price ($) *</label>
@@ -34,8 +46,13 @@
             </div>
 
             <div class="input-group">
-                <label for="target-price">Expected Target ($) *</label>
-                <input type="number" id="target-price" step="0.01" min="0" required>
+                <label for="account-risk">Account Risk (%)</label>
+                <select id="account-risk">
+                    <option value="1.0">1.0%</option>
+                    <option value="1.5" selected>1.5%</option>
+                    <option value="2.0">2.0%</option>
+                    <option value="2.5">2.5%</option>
+                </select>
             </div>
 
             <div class="input-group">
@@ -59,37 +76,103 @@
             </div>
         </div>
 
-        <div class="account-section">
-            <div class="input-group">
-                <label for="account-size">Account Size ($) *</label>
-                <input type="number" id="account-size" step="1" min="1" required>
-            </div>
-
-            <div class="input-group">
-                <label for="max-position">Max Position Size (%)</label>
-                <input type="number" id="max-position" step="0.1" min="0.1" max="100" value="6">
-            </div>
-        </div>
-
         <div class="results-section">
-            <div class="result-card">
-                <h3>Risk/Reward Ratio</h3>
-                <div id="risk-reward" class="result-value">-</div>
+            <!-- Standard Position Size -->
+            <div class="result-section">
+                <h3>📊 Standard Position Size</h3>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Shares to Buy</h4>
+                        <div id="shares-to-buy" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Total Position Value</h4>
+                        <div id="total-position-value" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Position % of Account</h4>
+                        <div id="position-percentage" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Risk per Share</h4>
+                        <div id="risk-per-share" class="result-value">-</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="result-card">
-                <h3>Position Size</h3>
-                <div id="position-size" class="result-value">-</div>
+            <!-- Risk Analysis -->
+            <div class="result-section">
+                <h3>📍 Risk Analysis</h3>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Dollar Risk Amount</h4>
+                        <div id="dollar-risk-amount" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Risk % of Account</h4>
+                        <div id="risk-percent-account" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Max Position per Trade</h4>
+                        <div id="max-position-value" class="result-value">-</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="result-card">
-                <h3>Risk Amount</h3>
-                <div id="risk-amount" class="result-value">-</div>
+            <!-- Stop Loss & Targets -->
+            <div class="result-section">
+                <h3>⚡ Stop Loss & Targets</h3>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Risk %</h4>
+                        <div id="stop-risk-percent" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Target Price (1:5 R:R)</h4>
+                        <div id="target-price-1-5" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Expected Gain %</h4>
+                        <div id="expected-gain-percent" class="result-value">-</div>
+                    </div>
+                </div>
             </div>
 
-            <div class="result-card">
-                <h3>Potential Profit</h3>
-                <div id="potential-profit" class="result-value">-</div>
+            <!-- Position Sizing Formula -->
+            <div class="result-section">
+                <h3>📐 Position Sizing Formula</h3>
+                <div class="formula-display">
+                    <div id="position-sizing-formula" class="formula-text">-</div>
+                </div>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Formula Result</h4>
+                        <div id="formula-result" class="result-value">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATR-Adjusted Position -->
+            <div class="result-section">
+                <h3>📈 ATR-Adjusted Position</h3>
+                <div class="input-group">
+                    <label for="atr-percent">ATR (%)</label>
+                    <input type="number" id="atr-percent" step="0.1" min="0" value="5.0">
+                </div>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Volatility Analysis</h4>
+                        <div id="volatility-analysis" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Adjusted Position</h4>
+                        <div id="adjusted-position" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Position Validation</h4>
+                        <div id="position-validation" class="result-value">-</div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -106,8 +189,8 @@
                     <input type="number" id="default-account-size" step="1" min="1">
                 </div>
                 <div class="input-group">
-                    <label for="default-max-position">Default Max Position (%)</label>
-                    <input type="number" id="default-max-position" step="0.1" min="0.1" max="100" value="6">
+                    <label for="default-max-positions">Default Amount of Positions</label>
+                    <input type="number" id="default-max-positions" step="1" min="1" max="50" value="10">
                 </div>
             </div>
             <div class="modal-footer">

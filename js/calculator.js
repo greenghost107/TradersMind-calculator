@@ -15,7 +15,7 @@ class PositionCalculator {
         };
     }
 
-    validateInputs(entryPrice, stopLoss, targetPrice, accountSize, maxPositionPercent) {
+    validateInputs(entryPrice, stopLoss, accountSize, accountRisk, maxPositions, atrPercent) {
         const errors = [];
 
         if (!entryPrice || entryPrice <= 0) {
@@ -26,24 +26,24 @@ class PositionCalculator {
             errors.push('Stop loss must be greater than 0');
         }
 
-        if (!targetPrice || targetPrice <= 0) {
-            errors.push('Target price must be greater than 0');
-        }
-
         if (!accountSize || accountSize <= 0) {
             errors.push('Account size must be greater than 0');
         }
 
-        if (!maxPositionPercent || maxPositionPercent <= 0 || maxPositionPercent > 100) {
-            errors.push('Max position percent must be between 0 and 100');
+        if (!accountRisk || accountRisk <= 0 || accountRisk > 100) {
+            errors.push('Account risk must be between 0 and 100');
+        }
+
+        if (!maxPositions || maxPositions <= 0 || maxPositions > 50) {
+            errors.push('Amount of positions must be between 1 and 50');
+        }
+
+        if (atrPercent < 0) {
+            errors.push('ATR percent cannot be negative');
         }
 
         if (entryPrice && stopLoss && entryPrice === stopLoss) {
             errors.push('Entry price and stop loss cannot be the same');
-        }
-
-        if (entryPrice && targetPrice && entryPrice === targetPrice) {
-            errors.push('Entry price and target price cannot be the same');
         }
 
         return errors;
@@ -58,22 +58,23 @@ class PositionCalculator {
         return reward / risk;
     }
 
-    calculatePositionSize(entryPrice, stopLoss, accountSize, maxPositionPercent, setupQuality, marketCondition) {
+    calculatePositionSize(entryPrice, stopLoss, accountSize, accountRisk, maxPositions, setupQuality, marketCondition) {
         const riskPerShare = Math.abs(entryPrice - stopLoss);
         if (riskPerShare === 0) return 0;
 
         const setupMultiplier = this.setupQualityMultipliers[setupQuality] || 0.8;
         const marketMultiplier = this.marketConditionMultipliers[marketCondition] || 0.8;
         
-        const adjustedMaxPosition = maxPositionPercent * setupMultiplier * marketMultiplier;
+        const adjustedRisk = accountRisk * setupMultiplier * marketMultiplier;
+        const riskAmount = (accountSize * adjustedRisk) / 100;
         
-        const maxRiskAmount = (accountSize * adjustedMaxPosition) / 100;
-        
-        const positionSize = Math.floor(maxRiskAmount / riskPerShare);
+        const sharesByRisk = Math.floor(riskAmount / riskPerShare);
         
         const maxSharesByCapital = Math.floor((accountSize * 0.95) / entryPrice);
+        const maxPositionValue = accountSize / maxPositions;
+        const maxSharesByPositions = Math.floor(maxPositionValue / entryPrice);
         
-        return Math.min(positionSize, maxSharesByCapital);
+        return Math.min(sharesByRisk, maxSharesByCapital, maxSharesByPositions);
     }
 
     calculateRiskAmount(entryPrice, stopLoss, positionSize) {
@@ -81,9 +82,85 @@ class PositionCalculator {
         return riskPerShare * positionSize;
     }
 
-    calculatePotentialProfit(entryPrice, targetPrice, positionSize) {
-        const profitPerShare = Math.abs(targetPrice - entryPrice);
-        return profitPerShare * positionSize;
+    calculatePositionPercentage(positionValue, accountSize) {
+        return (positionValue / accountSize) * 100;
+    }
+
+    calculateTargetPrice(entryPrice, stopLoss, ratio = 5) {
+        const riskPerShare = Math.abs(entryPrice - stopLoss);
+        const rewardPerShare = riskPerShare * ratio;
+        
+        if (entryPrice > stopLoss) {
+            return entryPrice + rewardPerShare;
+        } else {
+            return entryPrice - rewardPerShare;
+        }
+    }
+
+    calculateExpectedGainPercent(entryPrice, targetPrice) {
+        return ((Math.abs(targetPrice - entryPrice) / entryPrice) * 100);
+    }
+
+    calculateStopRiskPercent(entryPrice, stopLoss) {
+        return ((Math.abs(entryPrice - stopLoss) / entryPrice) * 100);
+    }
+
+    validatePositionRange(entryPrice, stopLoss) {
+        const riskPercent = this.calculateStopRiskPercent(entryPrice, stopLoss);
+        if (riskPercent >= 4 && riskPercent <= 5) {
+            return { status: 'optimal', message: '✅ Optimal stop range (4-5%)' };
+        } else if (riskPercent < 4) {
+            return { status: 'tight', message: '⚠️ Stop too tight (<4%)' };
+        } else {
+            return { status: 'wide', message: '❌ Stop too wide (>5%)' };
+        }
+    }
+
+    getPositionSizingFormula(accountSize, accountRisk, entryPrice, stopLoss) {
+        const riskAmount = (accountSize * accountRisk) / 100;
+        const riskPerShare = Math.abs(entryPrice - stopLoss);
+        
+        return {
+            formula: `(Account Size × Risk%) ÷ (Entry Price - Stop Loss)`,
+            calculation: `($${accountSize.toLocaleString()} × ${accountRisk}%) ÷ ($${entryPrice} - $${stopLoss})`,
+            result: `$${riskAmount.toLocaleString()} ÷ $${riskPerShare.toFixed(2)} = ${Math.floor(riskAmount / riskPerShare)} shares`
+        };
+    }
+
+    getATRMultiplier(atrPercent) {
+        if (atrPercent < 6) {
+            return 1.0;
+        } else if (atrPercent >= 6 && atrPercent <= 8) {
+            return 0.8;
+        } else {
+            return atrPercent > 10 ? 0.6 : 0.7;
+        }
+    }
+
+    calculateATRAdjustedPosition(riskCalculatedShares, entryPrice, atrPercent) {
+        const atrMultiplier = this.getATRMultiplier(atrPercent);
+        const atrShares = Math.floor(riskCalculatedShares * atrMultiplier);
+        const atrPositionValue = atrShares * entryPrice;
+        
+        return {
+            atrPercent: atrPercent,
+            atrMultiplier: atrMultiplier,
+            atrShares: atrShares,
+            atrPositionValue: atrPositionValue,
+            recommendation: this.getATRRecommendation(atrPercent)
+        };
+    }
+
+    getATRRecommendation(atrPercent) {
+        if (atrPercent < 6) {
+            return 'Low volatility - Full position size';
+        } else if (atrPercent >= 6 && atrPercent <= 8) {
+            return 'Medium volatility - Reduced position (80%)';
+        } else if (atrPercent > 8 && atrPercent <= 10) {
+            return 'High volatility - Reduced position (70%)';
+        } else {
+            return 'Very high volatility - Minimal position (60%)';
+        }
     }
 
     formatCurrency(amount) {
@@ -143,42 +220,67 @@ class PositionCalculator {
         const {
             entryPrice,
             stopLoss,
-            targetPrice,
             accountSize,
-            maxPositionPercent,
+            accountRisk,
+            maxPositions,
+            atrPercent,
             setupQuality,
             marketCondition
         } = inputs;
 
-        const errors = this.validateInputs(entryPrice, stopLoss, targetPrice, accountSize, maxPositionPercent);
+        const errors = this.validateInputs(entryPrice, stopLoss, accountSize, accountRisk, maxPositions, atrPercent);
         if (errors.length > 0) {
             return { errors };
         }
 
-        const riskReward = this.calculateRiskReward(entryPrice, stopLoss, targetPrice);
-        const positionSize = this.calculatePositionSize(
-            entryPrice, 
-            stopLoss, 
-            accountSize, 
-            maxPositionPercent, 
-            setupQuality, 
-            marketCondition
-        );
-        const riskAmount = this.calculateRiskAmount(entryPrice, stopLoss, positionSize);
-        const potentialProfit = this.calculatePotentialProfit(entryPrice, targetPrice, positionSize);
-        const recommendation = this.getRecommendation(riskReward, setupQuality, marketCondition);
+        const shares = this.calculatePositionSize(entryPrice, stopLoss, accountSize, accountRisk, maxPositions, setupQuality, marketCondition);
+        const totalPositionValue = shares * entryPrice;
+        const positionPercentage = this.calculatePositionPercentage(totalPositionValue, accountSize);
+        const riskPerShare = Math.abs(entryPrice - stopLoss);
+        const dollarRiskAmount = this.calculateRiskAmount(entryPrice, stopLoss, shares);
+        const riskPercentOfAccount = (dollarRiskAmount / accountSize) * 100;
+        const maxPositionValue = accountSize / maxPositions;
+        const maxPositionPercentage = this.calculatePositionPercentage(maxPositionValue, accountSize);
+        
+        const targetPrice = this.calculateTargetPrice(entryPrice, stopLoss, 5);
+        const stopRiskPercent = this.calculateStopRiskPercent(entryPrice, stopLoss);
+        const expectedGainPercent = this.calculateExpectedGainPercent(entryPrice, targetPrice);
+        
+        const positionSizingFormula = this.getPositionSizingFormula(accountSize, accountRisk, entryPrice, stopLoss);
+        const atrAdjustedPosition = this.calculateATRAdjustedPosition(shares, entryPrice, atrPercent);
+        const positionValidation = this.validatePositionRange(entryPrice, stopLoss);
 
         return {
-            riskReward,
-            positionSize,
-            riskAmount,
-            potentialProfit,
-            recommendation,
+            shares,
+            totalPositionValue,
+            positionPercentage,
+            riskPerShare,
+            dollarRiskAmount,
+            riskPercentOfAccount,
+            maxPositions,
+            maxPositionValue,
+            maxPositionPercentage,
+            stopRiskPercent,
+            targetPrice,
+            expectedGainPercent,
+            positionSizingFormula,
+            atrAdjustedPosition,
+            positionValidation,
             formatted: {
-                riskReward: this.formatRatio(riskReward),
-                positionSize: this.formatShares(positionSize),
-                riskAmount: this.formatCurrency(riskAmount),
-                potentialProfit: this.formatCurrency(potentialProfit)
+                shares: this.formatShares(shares),
+                totalPositionValue: this.formatCurrency(totalPositionValue),
+                positionPercentage: `${positionPercentage.toFixed(2)}%`,
+                riskPerShare: this.formatCurrency(riskPerShare),
+                dollarRiskAmount: this.formatCurrency(dollarRiskAmount),
+                riskPercentOfAccount: `${riskPercentOfAccount.toFixed(2)}%`,
+                maxPositions: maxPositions.toString(),
+                maxPositionValue: this.formatCurrency(maxPositionValue),
+                maxPositionPercentage: `${maxPositionPercentage.toFixed(2)}%`,
+                stopRiskPercent: `${stopRiskPercent.toFixed(2)}%`,
+                targetPrice: this.formatCurrency(targetPrice),
+                expectedGainPercent: `${expectedGainPercent.toFixed(2)}%`,
+                atrShares: this.formatShares(atrAdjustedPosition.atrShares),
+                atrPositionValue: this.formatCurrency(atrAdjustedPosition.atrPositionValue)
             }
         };
     }

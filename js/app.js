@@ -19,22 +19,34 @@ class TradersMindApp {
         this.elements = {
             entryPrice: document.getElementById('entry-price'),
             stopLoss: document.getElementById('stop-loss'),
-            targetPrice: document.getElementById('target-price'),
+            accountRisk: document.getElementById('account-risk'),
+            atrPercent: document.getElementById('atr-percent'),
             setupQuality: document.getElementById('setup-quality'),
             marketCondition: document.getElementById('market-condition'),
             accountSize: document.getElementById('account-size'),
-            maxPosition: document.getElementById('max-position'),
+            maxPositions: document.getElementById('max-positions'),
             
-            riskReward: document.getElementById('risk-reward'),
-            positionSize: document.getElementById('position-size'),
-            riskAmount: document.getElementById('risk-amount'),
-            potentialProfit: document.getElementById('potential-profit'),
+            sharesToBuy: document.getElementById('shares-to-buy'),
+            totalPositionValue: document.getElementById('total-position-value'),
+            positionPercentage: document.getElementById('position-percentage'),
+            riskPerShare: document.getElementById('risk-per-share'),
+            dollarRiskAmount: document.getElementById('dollar-risk-amount'),
+            riskPercentAccount: document.getElementById('risk-percent-account'),
+            maxPositionValue: document.getElementById('max-position-value'),
+            stopRiskPercent: document.getElementById('stop-risk-percent'),
+            targetPrice1_5: document.getElementById('target-price-1-5'),
+            expectedGainPercent: document.getElementById('expected-gain-percent'),
+            positionSizingFormula: document.getElementById('position-sizing-formula'),
+            formulaResult: document.getElementById('formula-result'),
+            volatilityAnalysis: document.getElementById('volatility-analysis'),
+            adjustedPosition: document.getElementById('adjusted-position'),
+            positionValidation: document.getElementById('position-validation'),
             
             settingsBtn: document.getElementById('settings-btn'),
             settingsModal: document.getElementById('settings-modal'),
             closeModal: document.getElementById('close-modal'),
             defaultAccountSize: document.getElementById('default-account-size'),
-            defaultMaxPosition: document.getElementById('default-max-position'),
+            defaultMaxPositions: document.getElementById('default-max-positions'),
             saveSettings: document.getElementById('save-settings')
         };
     }
@@ -43,9 +55,10 @@ class TradersMindApp {
         const inputElements = [
             this.elements.entryPrice,
             this.elements.stopLoss,
-            this.elements.targetPrice,
+            this.elements.accountRisk,
+            this.elements.atrPercent,
             this.elements.accountSize,
-            this.elements.maxPosition,
+            this.elements.maxPositions,
             this.elements.setupQuality,
             this.elements.marketCondition
         ];
@@ -148,61 +161,95 @@ class TradersMindApp {
         return {
             entryPrice: parseFloat(this.elements.entryPrice.value) || 0,
             stopLoss: parseFloat(this.elements.stopLoss.value) || 0,
-            targetPrice: parseFloat(this.elements.targetPrice.value) || 0,
+            accountRisk: parseFloat(this.elements.accountRisk.value) || 1.5,
+            atrPercent: parseFloat(this.elements.atrPercent.value) || 5.0,
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
-            maxPositionPercent: parseFloat(this.elements.maxPosition.value) || 6,
+            maxPositions: parseInt(this.elements.maxPositions.value) || 10,
             setupQuality: this.elements.setupQuality.value || 'good',
             marketCondition: this.elements.marketCondition.value || 'neutral'
         };
     }
 
     hasMinimumInputs(inputs) {
-        return inputs.entryPrice > 0 && inputs.stopLoss > 0 && inputs.targetPrice > 0 && inputs.accountSize > 0;
+        return inputs.entryPrice > 0 && inputs.stopLoss > 0 && inputs.accountSize > 0;
     }
 
     displayResults(result) {
-        this.elements.riskReward.textContent = result.formatted.riskReward;
-        this.elements.positionSize.textContent = result.formatted.positionSize;
-        this.elements.riskAmount.textContent = result.formatted.riskAmount;
-        this.elements.potentialProfit.textContent = result.formatted.potentialProfit;
+        this.elements.sharesToBuy.textContent = result.formatted.shares;
+        this.elements.totalPositionValue.textContent = result.formatted.totalPositionValue;
+        this.elements.positionPercentage.textContent = result.formatted.positionPercentage;
+        this.elements.riskPerShare.textContent = result.formatted.riskPerShare;
+        this.elements.dollarRiskAmount.textContent = result.formatted.dollarRiskAmount;
+        this.elements.riskPercentAccount.textContent = result.formatted.riskPercentOfAccount;
+        this.elements.maxPositionValue.innerHTML = `${result.formatted.maxPositionValue}<br><small>${result.formatted.maxPositions} positions (${result.formatted.maxPositionPercentage} each)</small>`;
+        this.elements.stopRiskPercent.textContent = result.formatted.stopRiskPercent;
+        this.elements.targetPrice1_5.textContent = result.formatted.targetPrice;
+        this.elements.expectedGainPercent.textContent = result.formatted.expectedGainPercent;
+        
+        this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
+        this.elements.formulaResult.textContent = result.positionSizingFormula.result;
+        
+        this.elements.volatilityAnalysis.innerHTML = `
+            ATR: ${result.atrAdjustedPosition.atrPercent}%<br>
+            ATR Multiplier: ${result.atrAdjustedPosition.atrMultiplier}x<br>
+            ATR Shares: ${result.formatted.atrShares}<br>
+            ATR Position Value: ${result.formatted.atrPositionValue}
+        `;
+        this.elements.adjustedPosition.textContent = result.atrAdjustedPosition.recommendation;
+        this.elements.positionValidation.textContent = result.positionValidation.message;
 
         this.updateResultColors(result);
     }
 
     updateResultColors(result) {
-        const riskRewardElement = this.elements.riskReward;
-        const positionSizeElement = this.elements.positionSize;
+        const validationElement = this.elements.positionValidation;
+        const sharesElement = this.elements.sharesToBuy;
 
-        riskRewardElement.className = 'result-value';
-        positionSizeElement.className = 'result-value';
+        validationElement.className = 'result-value';
+        sharesElement.className = 'result-value';
 
-        if (result.recommendation) {
-            switch (result.recommendation.type) {
-                case 'good':
-                    riskRewardElement.classList.add('positive');
+        if (result.positionValidation) {
+            switch (result.positionValidation.status) {
+                case 'optimal':
+                    validationElement.classList.add('positive');
                     break;
-                case 'warning':
-                    riskRewardElement.classList.add('warning');
-                    break;
-                case 'poor':
-                    riskRewardElement.classList.add('negative');
+                case 'tight':
+                case 'wide':
+                    validationElement.classList.add('warning');
                     break;
             }
         }
 
-        if (result.positionSize === 0) {
-            positionSizeElement.classList.add('warning');
+        if (result.shares === 0) {
+            sharesElement.classList.add('warning');
         }
     }
 
     clearResults() {
-        this.elements.riskReward.textContent = '-';
-        this.elements.positionSize.textContent = '-';
-        this.elements.riskAmount.textContent = '-';
-        this.elements.potentialProfit.textContent = '-';
+        const resultElements = [
+            this.elements.sharesToBuy,
+            this.elements.totalPositionValue,
+            this.elements.positionPercentage,
+            this.elements.riskPerShare,
+            this.elements.dollarRiskAmount,
+            this.elements.riskPercentAccount,
+            this.elements.maxPositionValue,
+            this.elements.stopRiskPercent,
+            this.elements.targetPrice1_5,
+            this.elements.expectedGainPercent,
+            this.elements.positionSizingFormula,
+            this.elements.formulaResult,
+            this.elements.volatilityAnalysis,
+            this.elements.adjustedPosition,
+            this.elements.positionValidation
+        ];
 
-        this.elements.riskReward.className = 'result-value';
-        this.elements.positionSize.className = 'result-value';
+        resultElements.forEach(element => {
+            if (element) {
+                element.textContent = '-';
+                element.className = 'result-value';
+            }
+        });
     }
 
     showValidationErrors(errors) {
@@ -232,8 +279,8 @@ class TradersMindApp {
         if (this.elements.accountSize) {
             this.elements.accountSize.value = settings.accountSize || '';
         }
-        if (this.elements.maxPosition) {
-            this.elements.maxPosition.value = settings.maxPositionPercent || 6;
+        if (this.elements.maxPositions) {
+            this.elements.maxPositions.value = settings.maxPositions || 10;
         }
     }
 
@@ -244,8 +291,11 @@ class TradersMindApp {
         if (this.elements.stopLoss && data.stopLoss) {
             this.elements.stopLoss.value = data.stopLoss;
         }
-        if (this.elements.targetPrice && data.targetPrice) {
-            this.elements.targetPrice.value = data.targetPrice;
+        if (this.elements.accountRisk && data.accountRisk) {
+            this.elements.accountRisk.value = data.accountRisk;
+        }
+        if (this.elements.atrPercent && data.atrPercent) {
+            this.elements.atrPercent.value = data.atrPercent;
         }
         if (this.elements.setupQuality && data.setupQuality) {
             this.elements.setupQuality.value = data.setupQuality;
@@ -259,7 +309,8 @@ class TradersMindApp {
         const calculationData = {
             entryPrice: this.elements.entryPrice.value,
             stopLoss: this.elements.stopLoss.value,
-            targetPrice: this.elements.targetPrice.value,
+            accountRisk: this.elements.accountRisk.value,
+            atrPercent: this.elements.atrPercent.value,
             setupQuality: this.elements.setupQuality.value,
             marketCondition: this.elements.marketCondition.value
         };
@@ -273,8 +324,8 @@ class TradersMindApp {
         if (this.elements.defaultAccountSize) {
             this.elements.defaultAccountSize.value = settings.accountSize || '';
         }
-        if (this.elements.defaultMaxPosition) {
-            this.elements.defaultMaxPosition.value = settings.maxPositionPercent || 6;
+        if (this.elements.defaultMaxPositions) {
+            this.elements.defaultMaxPositions.value = settings.maxPositions || 10;
         }
 
         this.elements.settingsModal.classList.add('show');
@@ -298,7 +349,7 @@ class TradersMindApp {
     saveSettingsData() {
         const newSettings = {
             accountSize: parseFloat(this.elements.defaultAccountSize.value) || 10000,
-            maxPositionPercent: parseFloat(this.elements.defaultMaxPosition.value) || 6
+            maxPositions: parseInt(this.elements.defaultMaxPositions.value) || 10
         };
 
         const success = this.storage.saveSettings(newSettings);

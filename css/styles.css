@@ -119,25 +119,62 @@ select {
 
 /* Results Section */
 .results-section {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
     margin-bottom: 2rem;
 }
 
-.result-card {
+.result-section {
     background-color: #2a2a2a;
     border-radius: 12px;
-    padding: 1.25rem;
-    text-align: center;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.result-card h3 {
-    font-size: 0.875rem;
+.result-section h3 {
+    font-size: 1.125rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    border-bottom: 2px solid #444;
+    padding-bottom: 0.5rem;
+}
+
+.result-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.result-card {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid #444;
+}
+
+.result-card h4 {
+    font-size: 0.75rem;
     color: #b0b0b0;
     margin-bottom: 0.5rem;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.formula-display {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+}
+
+.formula-text {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #e0e0e0;
+    text-align: center;
 }
 
 .result-value {
@@ -304,18 +341,18 @@ footer {
         padding: 0.75rem;
     }
     
-    .input-section, .account-section {
+    .input-section, .account-section, .result-section {
         padding: 1rem;
         margin-bottom: 1rem;
     }
     
-    .results-section {
+    .result-group {
         grid-template-columns: 1fr;
         gap: 0.75rem;
     }
     
     .result-card {
-        padding: 1rem;
+        padding: 0.75rem;
     }
     
     header h1 {
@@ -333,10 +370,11 @@ footer {
 @media (min-width: 768px) {
     main {
         padding: 2rem;
+        max-width: 800px;
     }
     
-    .results-section {
-        grid-template-columns: repeat(4, 1fr);
+    .result-group {
+        grid-template-columns: repeat(3, 1fr);
     }
     
     header h1 {
@@ -378,7 +416,7 @@ select:focus-visible {
         background-color: #0d1117;
     }
     
-    .input-section, .account-section, .result-card, .modal-content {
+    .input-section, .account-section, .result-section, .result-card, .modal-content, .formula-display {
         background-color: #161b22;
     }
     
