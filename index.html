@@ -159,19 +159,37 @@
                     <label for="atr-percent">ATR (%)</label>
                     <input type="number" id="atr-percent" step="0.1" min="0" value="5.0">
                 </div>
+                <div class="atr-formula-display">
+                    <div id="atr-formula" class="atr-formula-text">
+                        ATR Position Formula<br>
+                        ATR Shares = Risk_calculated_Shares × ATR Multiplier<br>
+                        ATR Position Value = ATR Shares × Entry Price
+                    </div>
+                </div>
                 <div class="result-group">
                     <div class="result-card">
-                        <h4>Volatility Analysis</h4>
-                        <div id="volatility-analysis" class="result-value">-</div>
+                        <h4>ATR-Adjusted Shares</h4>
+                        <div id="atr-shares-display" class="result-value large-value">-</div>
+                        <div class="result-subtitle">Pure risk shares × ATR multiplier</div>
                     </div>
                     <div class="result-card">
-                        <h4>Adjusted Position</h4>
-                        <div id="adjusted-position" class="result-value">-</div>
+                        <h4>ATR Position Value</h4>
+                        <div id="atr-position-value-display" class="result-value large-value">-</div>
+                        <div class="result-subtitle">Total capital for ATR position</div>
                     </div>
                     <div class="result-card">
-                        <h4>Position Validation</h4>
-                        <div id="position-validation" class="result-value">-</div>
+                        <h4>Position Difference</h4>
+                        <div id="position-difference" class="result-value">-</div>
+                        <div class="result-subtitle">Shares vs pure risk position</div>
                     </div>
+                    <div class="result-card">
+                        <h4>Volatility Impact</h4>
+                        <div id="volatility-impact" class="result-value">-</div>
+                        <div class="result-subtitle">Position adjustment direction</div>
+                    </div>
+                </div>
+                <div class="validation-display">
+                    <div id="position-validation" class="validation-text">-</div>
                 </div>
             </div>
         </div>

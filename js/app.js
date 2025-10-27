@@ -38,8 +38,10 @@ class TradersMindApp {
             expectedGainPercent: document.getElementById('expected-gain-percent'),
             positionSizingFormula: document.getElementById('position-sizing-formula'),
             formulaResult: document.getElementById('formula-result'),
-            volatilityAnalysis: document.getElementById('volatility-analysis'),
-            adjustedPosition: document.getElementById('adjusted-position'),
+            atrSharesDisplay: document.getElementById('atr-shares-display'),
+            atrPositionValueDisplay: document.getElementById('atr-position-value-display'),
+            positionDifference: document.getElementById('position-difference'),
+            volatilityImpact: document.getElementById('volatility-impact'),
             positionValidation: document.getElementById('position-validation'),
             
             settingsBtn: document.getElementById('settings-btn'),
@@ -189,13 +191,10 @@ class TradersMindApp {
         this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
         this.elements.formulaResult.textContent = result.positionSizingFormula.result;
         
-        this.elements.volatilityAnalysis.innerHTML = `
-            ATR: ${result.atrAdjustedPosition.atrPercent}%<br>
-            ATR Multiplier: ${result.atrAdjustedPosition.atrMultiplier}x<br>
-            ATR Shares: ${result.formatted.atrShares}<br>
-            ATR Position Value: ${result.formatted.atrPositionValue}
-        `;
-        this.elements.adjustedPosition.textContent = result.atrAdjustedPosition.recommendation;
+        this.elements.atrSharesDisplay.textContent = result.formatted.atrShares;
+        this.elements.atrPositionValueDisplay.textContent = result.formatted.atrPositionValue;
+        this.elements.positionDifference.textContent = result.formatted.positionDifference;
+        this.elements.volatilityImpact.textContent = result.formatted.volatilityImpact;
         this.elements.positionValidation.textContent = result.positionValidation.message;
 
         this.updateResultColors(result);
@@ -239,8 +238,10 @@ class TradersMindApp {
             this.elements.expectedGainPercent,
             this.elements.positionSizingFormula,
             this.elements.formulaResult,
-            this.elements.volatilityAnalysis,
-            this.elements.adjustedPosition,
+            this.elements.atrSharesDisplay,
+            this.elements.atrPositionValueDisplay,
+            this.elements.positionDifference,
+            this.elements.volatilityImpact,
             this.elements.positionValidation
         ];
 

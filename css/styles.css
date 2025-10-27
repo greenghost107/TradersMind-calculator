@@ -177,6 +177,48 @@ select {
     text-align: center;
 }
 
+.atr-formula-display {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+}
+
+.atr-formula-text {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: #e0e0e0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.large-value {
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+}
+
+.result-subtitle {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.validation-display {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border: 1px solid #444;
+    text-align: center;
+}
+
+.validation-text {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 .result-value {
     font-size: 1.25rem;
     font-weight: 600;

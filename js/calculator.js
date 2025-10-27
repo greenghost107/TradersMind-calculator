@@ -141,14 +141,28 @@ class PositionCalculator {
         const atrMultiplier = this.getATRMultiplier(atrPercent);
         const atrShares = Math.floor(riskCalculatedShares * atrMultiplier);
         const atrPositionValue = atrShares * entryPrice;
+        const positionDifference = atrShares - riskCalculatedShares;
+        const volatilityImpact = this.getVolatilityImpact(atrMultiplier);
         
         return {
             atrPercent: atrPercent,
             atrMultiplier: atrMultiplier,
             atrShares: atrShares,
             atrPositionValue: atrPositionValue,
+            positionDifference: positionDifference,
+            volatilityImpact: volatilityImpact,
             recommendation: this.getATRRecommendation(atrPercent)
         };
+    }
+
+    getVolatilityImpact(atrMultiplier) {
+        if (atrMultiplier === 1.0) {
+            return 'No Change';
+        } else if (atrMultiplier < 1.0) {
+            return 'Reduced';
+        } else {
+            return 'Increased';
+        }
     }
 
     getATRRecommendation(atrPercent) {
@@ -280,7 +294,9 @@ class PositionCalculator {
                 targetPrice: this.formatCurrency(targetPrice),
                 expectedGainPercent: `${expectedGainPercent.toFixed(2)}%`,
                 atrShares: this.formatShares(atrAdjustedPosition.atrShares),
-                atrPositionValue: this.formatCurrency(atrAdjustedPosition.atrPositionValue)
+                atrPositionValue: this.formatCurrency(atrAdjustedPosition.atrPositionValue),
+                positionDifference: atrAdjustedPosition.positionDifference.toString(),
+                volatilityImpact: atrAdjustedPosition.volatilityImpact
             }
         };
     }
