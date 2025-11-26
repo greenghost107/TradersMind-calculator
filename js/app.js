@@ -19,7 +19,6 @@ class TradersMindApp {
         this.elements = {
             entryPrice: document.getElementById('entry-price'),
             stopLoss: document.getElementById('stop-loss'),
-            accountRisk: document.getElementById('account-risk'),
             atrPercent: document.getElementById('atr-percent'),
             setupQuality: document.getElementById('setup-quality'),
             marketCondition: document.getElementById('market-condition'),
@@ -50,7 +49,6 @@ class TradersMindApp {
         const inputElements = [
             this.elements.entryPrice,
             this.elements.stopLoss,
-            this.elements.accountRisk,
             this.elements.atrPercent,
             this.elements.accountSize,
             this.elements.maxPositions,
@@ -130,7 +128,6 @@ class TradersMindApp {
         return {
             entryPrice: parseFloat(this.elements.entryPrice.value) || 0,
             stopLoss: parseFloat(this.elements.stopLoss.value) || 0,
-            accountRisk: parseFloat(this.elements.accountRisk.value) || 1.5,
             atrPercent: parseFloat(this.elements.atrPercent.value) || 5.0,
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
             maxPositions: parseInt(this.elements.maxPositions.value) || 10,
