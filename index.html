@@ -48,23 +48,11 @@
 
 
             <div class="input-group">
-                <label for="setup-quality">Setup Quality</label>
-                <select id="setup-quality">
-                    <option value="excellent">Excellent</option>
-                    <option value="good" selected>Good</option>
-                    <option value="average">Average</option>
-                    <option value="poor">Poor</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="market-condition">Market Condition</label>
-                <select id="market-condition">
-                    <option value="bullish">Bullish</option>
-                    <option value="neutral" selected>Neutral</option>
-                    <option value="bearish">Bearish</option>
-                    <option value="volatile">Volatile</option>
-                </select>
+                <label for="risk-percent">Risk % of Account</label>
+                <input type="range" id="risk-percent" min="0.5" max="1.5" step="0.25" value="1.0" class="risk-slider">
+                <div class="risk-display">
+                    <span id="risk-percent-value">1.0%</span>
+                </div>
             </div>
         </div>
 
@@ -130,11 +118,47 @@
                 </div>
             </div>
 
+            <!-- Risk Calculation -->
+            <div class="result-section">
+                <h3>💰 Risk Calculation</h3>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Portfolio Risk (%)</h4>
+                        <div id="portfolio-risk-percent" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Portfolio Risk ($)</h4>
+                        <div id="portfolio-risk-amount" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Shares to Buy</h4>
+                        <div id="risk-shares-to-buy" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Total Position Value</h4>
+                        <div id="risk-total-position-value" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Position % of Account</h4>
+                        <div id="risk-position-percentage" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Risk per Share</h4>
+                        <div id="risk-risk-per-share" class="result-value">-</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Position Sizing Formula -->
             <div class="result-section">
                 <h3>📐 Position Sizing Formula</h3>
                 <div class="formula-display">
-                    <div id="position-sizing-formula" class="formula-text">-</div>
+                    <div id="position-sizing-formula" class="formula-text">Position Size = (Portfolio Risk in $) / (Stop Loss %)</div>
+                </div>
+                <div class="formula-explanation">
+                    <p><strong>Risk-Based Position Sizing:</strong></p>
+                    <p>This formula calculates the optimal position size based on your predefined risk tolerance. It determines how many shares to buy by dividing your total portfolio risk amount by the risk per share (stop loss percentage).</p>
+                    <p><strong>Example:</strong> If your portfolio risk is $1,000 and your stop loss is 5%, then your position size = $1,000 / 5% = $20,000 worth of shares.</p>
                 </div>
                 <div class="result-group">
                     <div class="result-card">

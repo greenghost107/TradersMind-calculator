@@ -11,6 +11,7 @@ class TradersMindApp {
     init() {
         this.bindElements();
         this.attachEventListeners();
+        this.updateRiskPercentDisplay();
         this.loadSavedData();
         this.setupAccessibility();
     }
@@ -20,8 +21,8 @@ class TradersMindApp {
             entryPrice: document.getElementById('entry-price'),
             stopLoss: document.getElementById('stop-loss'),
             atrPercent: document.getElementById('atr-percent'),
-            setupQuality: document.getElementById('setup-quality'),
-            marketCondition: document.getElementById('market-condition'),
+            riskPercent: document.getElementById('risk-percent'),
+            riskPercentValue: document.getElementById('risk-percent-value'),
             accountSize: document.getElementById('account-size'),
             maxPositions: document.getElementById('max-positions'),
             
@@ -35,6 +36,12 @@ class TradersMindApp {
             stopRiskPercent: document.getElementById('stop-risk-percent'),
             targetPrice1_5: document.getElementById('target-price-1-5'),
             expectedGainPercent: document.getElementById('expected-gain-percent'),
+            portfolioRiskPercent: document.getElementById('portfolio-risk-percent'),
+            portfolioRiskAmount: document.getElementById('portfolio-risk-amount'),
+            riskSharesToBuy: document.getElementById('risk-shares-to-buy'),
+            riskTotalPositionValue: document.getElementById('risk-total-position-value'),
+            riskPositionPercentage: document.getElementById('risk-position-percentage'),
+            riskRiskPerShare: document.getElementById('risk-risk-per-share'),
             positionSizingFormula: document.getElementById('position-sizing-formula'),
             formulaResult: document.getElementById('formula-result'),
             atrSharesDisplay: document.getElementById('atr-shares-display'),
@@ -52,8 +59,7 @@ class TradersMindApp {
             this.elements.atrPercent,
             this.elements.accountSize,
             this.elements.maxPositions,
-            this.elements.setupQuality,
-            this.elements.marketCondition
+            this.elements.riskPercent
         ];
 
         inputElements.forEach(element => {
@@ -62,6 +68,14 @@ class TradersMindApp {
                 element.addEventListener('change', () => this.handleInputChange());
             }
         });
+
+        // Special handling for risk percent slider to update display
+        if (this.elements.riskPercent) {
+            this.elements.riskPercent.addEventListener('input', () => {
+                this.updateRiskPercentDisplay();
+                this.handleInputChange();
+            });
+        }
 
         window.addEventListener('beforeunload', () => {
             this.saveCurrentState();
@@ -131,9 +145,14 @@ class TradersMindApp {
             atrPercent: parseFloat(this.elements.atrPercent.value) || 5.0,
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
             maxPositions: parseInt(this.elements.maxPositions.value) || 10,
-            setupQuality: this.elements.setupQuality.value || 'good',
-            marketCondition: this.elements.marketCondition.value || 'neutral'
+            riskPercent: parseFloat(this.elements.riskPercent.value) || 1.0
         };
+    }
+
+    updateRiskPercentDisplay() {
+        if (this.elements.riskPercent && this.elements.riskPercentValue) {
+            this.elements.riskPercentValue.textContent = `${this.elements.riskPercent.value}%`;
+        }
     }
 
     hasMinimumInputs(inputs) {
@@ -141,16 +160,25 @@ class TradersMindApp {
     }
 
     displayResults(result) {
-        this.elements.sharesToBuy.textContent = result.formatted.shares;
-        this.elements.totalPositionValue.textContent = result.formatted.totalPositionValue;
-        this.elements.positionPercentage.textContent = result.formatted.positionPercentage;
+        // Standard Position Size section (original calculation)
+        this.elements.sharesToBuy.textContent = result.formatted.originalShares;
+        this.elements.totalPositionValue.textContent = result.formatted.originalTotalPositionValue;
+        this.elements.positionPercentage.textContent = result.formatted.originalPositionPercentage;
         this.elements.riskPerShare.textContent = result.formatted.riskPerShare;
-        this.elements.dollarRiskAmount.textContent = result.formatted.dollarRiskAmount;
-        this.elements.riskPercentAccount.textContent = result.formatted.riskPercentOfAccount;
+        this.elements.dollarRiskAmount.textContent = result.formatted.originalDollarRiskAmount;
+        this.elements.riskPercentAccount.textContent = result.formatted.originalRiskPercentOfAccount;
         this.elements.maxPositionValue.innerHTML = `${result.formatted.maxPositionValue}<br><small>${result.formatted.maxPositions} positions (${result.formatted.maxPositionPercentage} each)</small>`;
         this.elements.stopRiskPercent.textContent = result.formatted.stopRiskPercent;
         this.elements.targetPrice1_5.textContent = result.formatted.targetPrice;
         this.elements.expectedGainPercent.textContent = result.formatted.expectedGainPercent;
+        
+        // Risk Calculation section (risk-based calculation)
+        this.elements.portfolioRiskPercent.textContent = result.formatted.portfolioRiskPercent;
+        this.elements.portfolioRiskAmount.textContent = result.formatted.portfolioRiskAmount;
+        this.elements.riskSharesToBuy.textContent = result.formatted.riskShares;
+        this.elements.riskTotalPositionValue.textContent = result.formatted.riskTotalPositionValue;
+        this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
+        this.elements.riskRiskPerShare.textContent = result.formatted.riskPerShare;
         
         this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
         this.elements.formulaResult.textContent = result.positionSizingFormula.result;
@@ -183,7 +211,7 @@ class TradersMindApp {
             }
         }
 
-        if (result.shares === 0) {
+        if (result.originalShares === 0) {
             sharesElement.classList.add('warning');
         }
     }
@@ -200,6 +228,12 @@ class TradersMindApp {
             this.elements.stopRiskPercent,
             this.elements.targetPrice1_5,
             this.elements.expectedGainPercent,
+            this.elements.portfolioRiskPercent,
+            this.elements.portfolioRiskAmount,
+            this.elements.riskSharesToBuy,
+            this.elements.riskTotalPositionValue,
+            this.elements.riskPositionPercentage,
+            this.elements.riskRiskPerShare,
             this.elements.positionSizingFormula,
             this.elements.formulaResult,
             this.elements.atrSharesDisplay,
@@ -244,17 +278,12 @@ class TradersMindApp {
         if (this.elements.stopLoss && data.stopLoss) {
             this.elements.stopLoss.value = data.stopLoss;
         }
-        if (this.elements.accountRisk && data.accountRisk) {
-            this.elements.accountRisk.value = data.accountRisk;
-        }
         if (this.elements.atrPercent && data.atrPercent) {
             this.elements.atrPercent.value = data.atrPercent;
         }
-        if (this.elements.setupQuality && data.setupQuality) {
-            this.elements.setupQuality.value = data.setupQuality;
-        }
-        if (this.elements.marketCondition && data.marketCondition) {
-            this.elements.marketCondition.value = data.marketCondition;
+        if (this.elements.riskPercent && data.riskPercent) {
+            this.elements.riskPercent.value = data.riskPercent;
+            this.updateRiskPercentDisplay();
         }
     }
 
@@ -262,10 +291,8 @@ class TradersMindApp {
         const calculationData = {
             entryPrice: this.elements.entryPrice.value,
             stopLoss: this.elements.stopLoss.value,
-            accountRisk: this.elements.accountRisk.value,
             atrPercent: this.elements.atrPercent.value,
-            setupQuality: this.elements.setupQuality.value,
-            marketCondition: this.elements.marketCondition.value
+            riskPercent: this.elements.riskPercent.value
         };
 
         this.storage.saveCalculationData(calculationData);
