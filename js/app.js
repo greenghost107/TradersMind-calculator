@@ -30,15 +30,10 @@ class TradersMindApp {
             totalPositionValue: document.getElementById('total-position-value'),
             positionPercentage: document.getElementById('position-percentage'),
             riskPerShare: document.getElementById('risk-per-share'),
-            dollarRiskAmount: document.getElementById('dollar-risk-amount'),
-            riskPercentAccount: document.getElementById('risk-percent-account'),
-            maxPositionValue: document.getElementById('max-position-value'),
-            stopRiskPercent: document.getElementById('stop-risk-percent'),
-            targetPrice1_5: document.getElementById('target-price-1-5'),
-            expectedGainPercent: document.getElementById('expected-gain-percent'),
             portfolioRiskPercent: document.getElementById('portfolio-risk-percent'),
             portfolioRiskAmount: document.getElementById('portfolio-risk-amount'),
             riskSharesToBuy: document.getElementById('risk-shares-to-buy'),
+            riskConstraintLabel: document.getElementById('risk-constraint-label'),
             riskTotalPositionValue: document.getElementById('risk-total-position-value'),
             riskPositionPercentage: document.getElementById('risk-position-percentage'),
             riskRiskPerShare: document.getElementById('risk-risk-per-share'),
@@ -160,25 +155,28 @@ class TradersMindApp {
     }
 
     displayResults(result) {
-        // Standard Position Size section (original calculation)
-        this.elements.sharesToBuy.textContent = result.formatted.originalShares;
-        this.elements.totalPositionValue.textContent = result.formatted.originalTotalPositionValue;
-        this.elements.positionPercentage.textContent = result.formatted.originalPositionPercentage;
-        this.elements.riskPerShare.textContent = result.formatted.riskPerShare;
-        this.elements.dollarRiskAmount.textContent = result.formatted.originalDollarRiskAmount;
-        this.elements.riskPercentAccount.textContent = result.formatted.originalRiskPercentOfAccount;
-        this.elements.maxPositionValue.innerHTML = `${result.formatted.maxPositionValue}<br><small>${result.formatted.maxPositions} positions (${result.formatted.maxPositionPercentage} each)</small>`;
-        this.elements.stopRiskPercent.textContent = result.formatted.stopRiskPercent;
-        this.elements.targetPrice1_5.textContent = result.formatted.targetPrice;
-        this.elements.expectedGainPercent.textContent = result.formatted.expectedGainPercent;
-        
-        // Risk Calculation section (risk-based calculation)
+        // Risk Calculation section (risk-based calculation with MIN logic) - Now at top
         this.elements.portfolioRiskPercent.textContent = result.formatted.portfolioRiskPercent;
         this.elements.portfolioRiskAmount.textContent = result.formatted.portfolioRiskAmount;
         this.elements.riskSharesToBuy.textContent = result.formatted.riskShares;
         this.elements.riskTotalPositionValue.textContent = result.formatted.riskTotalPositionValue;
         this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
         this.elements.riskRiskPerShare.textContent = result.formatted.riskPerShare;
+        
+        // Show/hide constraint label
+        if (this.elements.riskConstraintLabel) {
+            if (result.riskConstrainedByPositions) {
+                this.elements.riskConstraintLabel.style.display = 'block';
+            } else {
+                this.elements.riskConstraintLabel.style.display = 'none';
+            }
+        }
+        
+        // Total Max Position section (original calculation) - Now second
+        this.elements.sharesToBuy.textContent = result.formatted.originalShares;
+        this.elements.totalPositionValue.textContent = result.formatted.originalTotalPositionValue;
+        this.elements.positionPercentage.textContent = result.formatted.originalPositionPercentage;
+        this.elements.riskPerShare.textContent = result.formatted.riskPerShare;
         
         this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
         this.elements.formulaResult.textContent = result.positionSizingFormula.result;
@@ -222,12 +220,6 @@ class TradersMindApp {
             this.elements.totalPositionValue,
             this.elements.positionPercentage,
             this.elements.riskPerShare,
-            this.elements.dollarRiskAmount,
-            this.elements.riskPercentAccount,
-            this.elements.maxPositionValue,
-            this.elements.stopRiskPercent,
-            this.elements.targetPrice1_5,
-            this.elements.expectedGainPercent,
             this.elements.portfolioRiskPercent,
             this.elements.portfolioRiskAmount,
             this.elements.riskSharesToBuy,
@@ -249,6 +241,11 @@ class TradersMindApp {
                 element.className = 'result-value';
             }
         });
+        
+        // Hide constraint label
+        if (this.elements.riskConstraintLabel) {
+            this.elements.riskConstraintLabel.style.display = 'none';
+        }
     }
 
     showValidationErrors(errors) {

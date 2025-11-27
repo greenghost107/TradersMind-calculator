@@ -58,19 +58,33 @@ class PositionCalculator {
         return Math.min(maxSharesByCapital, maxSharesByPositions);
     }
 
-    calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent) {
+    calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent, maxPositions) {
         const riskPerShare = Math.abs(entryPrice - stopLoss);
-        if (riskPerShare === 0) return 0;
+        if (riskPerShare === 0) return { shares: 0, constrainedByPositions: false };
 
+        // Method 1: (Portfolio × Risk%) / Stop%
         const portfolioRisk = accountSize * (riskPercent / 100);
         const stopLossPercent = (riskPerShare / entryPrice) * 100;
         
-        if (stopLossPercent === 0) return 0;
+        if (stopLossPercent === 0) return { shares: 0, constrainedByPositions: false };
         
-        const positionValue = portfolioRisk / (stopLossPercent / 100);
-        const shares = Math.floor(positionValue / entryPrice);
+        const riskBasedPositionValue = portfolioRisk / (stopLossPercent / 100);
+        const riskBasedShares = Math.floor(riskBasedPositionValue / entryPrice);
         
-        return Math.max(0, shares);
+        // Method 2: Portfolio / Max Positions
+        const maxPositionValue = accountSize / maxPositions;
+        const positionLimitShares = Math.floor(maxPositionValue / entryPrice);
+        
+        // Use MIN of both methods
+        const finalShares = Math.min(riskBasedShares, positionLimitShares);
+        const constrainedByPositions = finalShares === positionLimitShares && riskBasedShares > positionLimitShares;
+        
+        return { 
+            shares: Math.max(0, finalShares),
+            constrainedByPositions: constrainedByPositions,
+            riskBasedShares: riskBasedShares,
+            positionLimitShares: positionLimitShares
+        };
     }
 
     calculatePortfolioRisk(accountSize, riskPercent) {
@@ -131,17 +145,18 @@ class PositionCalculator {
         };
     }
 
-    getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, stopLoss) {
+    getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, stopLoss, maxPositions, riskResult) {
         const portfolioRisk = accountSize * (riskPercent / 100);
         const riskPerShare = Math.abs(entryPrice - stopLoss);
         const stopLossPercent = (riskPerShare / entryPrice) * 100;
-        const positionValue = portfolioRisk / (stopLossPercent / 100);
-        const shares = Math.floor(positionValue / entryPrice);
+        const maxPositionValue = accountSize / maxPositions;
+        
+        const riskBasedPositionValue = portfolioRisk / (stopLossPercent / 100);
         
         return {
-            formula: `Position Size = (Portfolio Risk in $) / (Stop Loss %)`,
-            calculation: `$${portfolioRisk.toLocaleString()} ÷ ${stopLossPercent.toFixed(2)}% = $${positionValue.toLocaleString()}`,
-            result: `$${positionValue.toLocaleString()} ÷ $${entryPrice} = ${shares} shares`
+            formula: `Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]`,
+            calculation: `MIN[$${riskBasedPositionValue.toLocaleString()}, $${maxPositionValue.toLocaleString()}] = $${Math.min(riskBasedPositionValue, maxPositionValue).toLocaleString()}`,
+            result: `${riskResult.shares} shares ${riskResult.constrainedByPositions ? '(limited by max positions)' : '(risk-based)'}`
         };
     }
 
@@ -238,7 +253,8 @@ class PositionCalculator {
         
         // Risk-based position sizing (for Risk Calculation section)
         const portfolioRisk = this.calculatePortfolioRisk(accountSize, riskPercent);
-        const riskShares = this.calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent);
+        const riskResult = this.calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent, maxPositions);
+        const riskShares = riskResult.shares;
         const riskTotalPositionValue = riskShares * entryPrice;
         const riskPositionPercentage = this.calculatePositionPercentage(riskTotalPositionValue, accountSize);
         const riskDollarRiskAmount = this.calculateRiskAmount(entryPrice, stopLoss, riskShares);
@@ -252,7 +268,7 @@ class PositionCalculator {
         const stopRiskPercent = this.calculateStopRiskPercent(entryPrice, stopLoss);
         const expectedGainPercent = this.calculateExpectedGainPercent(entryPrice, targetPrice);
         
-        const positionSizingFormula = this.getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, stopLoss);
+        const positionSizingFormula = this.getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, stopLoss, maxPositions, riskResult);
         const atrAdjustedPosition = this.calculateATRAdjustedPosition(riskShares, entryPrice, atrPercent);
         const positionValidation = this.validatePositionRange(entryPrice, stopLoss);
 
@@ -270,6 +286,7 @@ class PositionCalculator {
             riskPositionPercentage,
             riskDollarRiskAmount,
             riskRiskPercentOfAccount,
+            riskConstrainedByPositions: riskResult.constrainedByPositions,
             
             // Common values
             riskPerShare,
