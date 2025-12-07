@@ -26,8 +26,8 @@ class PositionCalculator {
             errors.push('ATR percent cannot be negative');
         }
 
-        if (!riskPercent || riskPercent < 0.5 || riskPercent > 1.5) {
-            errors.push('Risk percent must be between 0.5% and 1.5%');
+        if (!riskPercent || riskPercent < 0.1 || riskPercent > 1.5) {
+            errors.push('Risk percent must be between 0.1% and 1.5%');
         }
 
         if (entryPrice && stopLoss && entryPrice === stopLoss) {
