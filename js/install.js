@@ -103,18 +103,18 @@ class PWAInstaller {
             });
         }
 
-        // Menu install button click (with touch support for mobile)
+        // Menu install button click
         if (this.menuInstallBtn) {
-            const handleInstallClick = (e) => {
+            this.menuInstallBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 console.log('[PWAInstaller] Install button clicked');
                 this.closeSettingsMenu();
-                this.showInstallPrompt();
-            };
-
-            this.menuInstallBtn.addEventListener('click', handleInstallClick);
-            this.menuInstallBtn.addEventListener('touchend', handleInstallClick);
+                // Use setTimeout to ensure menu closes before showing modal
+                setTimeout(() => {
+                    this.showInstallPrompt();
+                }, 100);
+            });
         }
 
         // Close menu when clicking outside
