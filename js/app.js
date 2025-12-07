@@ -285,6 +285,9 @@ class TradersMindApp {
         if (this.elements.maxPositions && data.maxPositions) {
             this.elements.maxPositions.value = data.maxPositions;
         }
+        if (this.elements.accountSize && data.accountSize) {
+            this.elements.accountSize.value = data.accountSize;
+        }
     }
 
     saveCurrentState() {
@@ -293,7 +296,8 @@ class TradersMindApp {
             stopLoss: this.elements.stopLoss.value,
             atrPercent: this.elements.atrPercent.value,
             riskPercent: this.elements.riskPercent.value,
-            maxPositions: this.elements.maxPositions.value
+            maxPositions: this.elements.maxPositions.value,
+            accountSize: this.elements.accountSize.value
         };
 
         this.storage.saveCalculationData(calculationData);

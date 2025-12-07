@@ -31,6 +31,7 @@ class StorageManager {
                 setupQuality: data.setupQuality || 'good',
                 marketCondition: data.marketCondition || 'neutral',
                 maxPositions: data.maxPositions || 10,
+                accountSize: data.accountSize || '',
                 timestamp: Date.now()
             };
 
@@ -65,7 +66,8 @@ class StorageManager {
                 targetPrice: data.targetPrice || '',
                 setupQuality: data.setupQuality || 'good',
                 marketCondition: data.marketCondition || 'neutral',
-                maxPositions: data.maxPositions || 10
+                maxPositions: data.maxPositions || 10,
+                accountSize: data.accountSize || ''
             };
         } catch (e) {
             console.warn('Failed to load calculation data:', e);
