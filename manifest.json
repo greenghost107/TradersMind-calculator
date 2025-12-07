@@ -2,7 +2,7 @@
   "name": "TradersMind Calculator",
   "short_name": "TradersMind",
   "description": "Mobile trading position calculator with risk management",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#2196f3",
@@ -32,7 +32,7 @@
       "name": "Quick Calculate",
       "short_name": "Calculate",
       "description": "Start a new position calculation",
-      "url": "/",
+      "url": "./",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -43,6 +43,6 @@
   ],
   "lang": "en",
   "dir": "ltr",
-  "scope": "/",
+  "scope": "./",
   "prefer_related_applications": false
 }

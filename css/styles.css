@@ -100,12 +100,13 @@ header h1 {
     top: calc(100% + 8px);
     right: 0;
     min-width: 200px;
+    max-width: calc(100vw - 16px);
     background-color: #2a2a2a;
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     border: 1px solid #444;
     padding: 0.5rem 0;
-    z-index: 200;
+    z-index: 1000;
     opacity: 1;
     transform: translateY(0);
     transition: opacity 0.15s ease, transform 0.15s ease;
