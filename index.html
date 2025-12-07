@@ -13,13 +13,28 @@
 <body>
     <header>
         <h1>TradersMind Calculator</h1>
-        <button id="pwa-install-btn" class="pwa-install-btn hidden" aria-label="Install App">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7,10 12,15 17,10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-        </button>
+        <div class="header-menu-container">
+            <button id="settings-menu-btn" class="settings-menu-btn"
+                    aria-label="Settings menu"
+                    aria-haspopup="true"
+                    aria-expanded="false">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="2"/>
+                    <circle cx="12" cy="12" r="2"/>
+                    <circle cx="12" cy="19" r="2"/>
+                </svg>
+            </button>
+            <div id="settings-dropdown" class="settings-dropdown hidden" role="menu">
+                <button id="menu-install-btn" class="dropdown-item" role="menuitem">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span id="menu-install-text">Add to Home Screen</span>
+                </button>
+            </div>
+        </div>
     </header>
 
     <main>

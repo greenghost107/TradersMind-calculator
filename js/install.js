@@ -17,12 +17,17 @@ class PWAInstaller {
 
     bindElements() {
         this.installButton = document.getElementById('install-btn');
-        this.headerInstallButton = document.getElementById('pwa-install-btn');
         this.pwaModal = document.getElementById('pwa-install-modal');
         this.pwaCloseBtn = document.getElementById('pwa-close-btn');
         this.pwaInstallAction = document.getElementById('pwa-install-action');
         this.pwaLaterBtn = document.getElementById('pwa-later-btn');
         this.pwaInstructions = document.getElementById('pwa-instructions');
+
+        // Settings menu elements
+        this.settingsMenuBtn = document.getElementById('settings-menu-btn');
+        this.settingsDropdown = document.getElementById('settings-dropdown');
+        this.menuInstallBtn = document.getElementById('menu-install-btn');
+        this.menuInstallText = document.getElementById('menu-install-text');
     }
 
     async registerServiceWorker() {
@@ -90,11 +95,38 @@ class PWAInstaller {
             });
         }
 
-        if (this.headerInstallButton) {
-            this.headerInstallButton.addEventListener('click', () => {
-                this.showInstallModal();
+        // Settings menu toggle
+        if (this.settingsMenuBtn) {
+            this.settingsMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleSettingsMenu();
             });
         }
+
+        // Menu install button click
+        if (this.menuInstallBtn) {
+            this.menuInstallBtn.addEventListener('click', () => {
+                this.closeSettingsMenu();
+                this.showInstallPrompt();
+            });
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (this.settingsDropdown &&
+                !this.settingsDropdown.contains(e.target) &&
+                !this.settingsMenuBtn.contains(e.target)) {
+                this.closeSettingsMenu();
+            }
+        });
+
+        // Close menu on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isMenuOpen()) {
+                this.closeSettingsMenu();
+                this.settingsMenuBtn.focus();
+            }
+        });
 
         if (this.pwaCloseBtn) {
             this.pwaCloseBtn.addEventListener('click', () => {
@@ -216,7 +248,7 @@ class PWAInstaller {
 
     updateInstallButtonVisibility() {
         const shouldShow = this.isInstallable && !this.isInstalled;
-        
+
         // Update floating action button
         if (this.installButton) {
             if (shouldShow) {
@@ -228,18 +260,56 @@ class PWAInstaller {
             }
         }
 
-        // Update header install button
-        if (this.headerInstallButton) {
-            if (shouldShow) {
-                this.headerInstallButton.classList.remove('hidden');
-                this.headerInstallButton.setAttribute('aria-hidden', 'false');
-            } else {
-                this.headerInstallButton.classList.add('hidden');
-                this.headerInstallButton.setAttribute('aria-hidden', 'true');
-            }
+        // Update menu item state if menu is open
+        if (this.isMenuOpen()) {
+            this.updateMenuInstallState();
         }
-        
-        console.log(`[PWAInstaller] Install buttons visibility: ${shouldShow ? 'visible' : 'hidden'}`);
+
+        console.log(`[PWAInstaller] Install button visibility: ${shouldShow ? 'visible' : 'hidden'}`);
+    }
+
+    // Settings Menu Methods
+    toggleSettingsMenu() {
+        if (this.isMenuOpen()) {
+            this.closeSettingsMenu();
+        } else {
+            this.openSettingsMenu();
+        }
+    }
+
+    openSettingsMenu() {
+        if (!this.settingsDropdown || !this.settingsMenuBtn) return;
+
+        this.settingsDropdown.classList.remove('hidden');
+        this.settingsMenuBtn.setAttribute('aria-expanded', 'true');
+        this.updateMenuInstallState();
+    }
+
+    closeSettingsMenu() {
+        if (!this.settingsDropdown || !this.settingsMenuBtn) return;
+
+        this.settingsDropdown.classList.add('hidden');
+        this.settingsMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    isMenuOpen() {
+        return this.settingsDropdown && !this.settingsDropdown.classList.contains('hidden');
+    }
+
+    updateMenuInstallState() {
+        if (!this.menuInstallBtn || !this.menuInstallText) return;
+
+        if (this.isInstalled || this.isStandalone()) {
+            // Already installed
+            this.menuInstallBtn.disabled = true;
+            this.menuInstallBtn.classList.add('installed');
+            this.menuInstallText.textContent = 'Already Installed';
+        } else {
+            // Can be installed or show instructions
+            this.menuInstallBtn.disabled = false;
+            this.menuInstallBtn.classList.remove('installed');
+            this.menuInstallText.textContent = 'Add to Home Screen';
+        }
     }
 
     trackInstallEvent() {

@@ -59,6 +59,115 @@ header h1 {
     display: none;
 }
 
+/* Settings Menu */
+.header-menu-container {
+    position: relative;
+}
+
+.settings-menu-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.settings-menu-btn:hover,
+.settings-menu-btn:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    outline: none;
+}
+
+.settings-menu-btn:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.settings-menu-btn[aria-expanded="true"] {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Dropdown Menu */
+.settings-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 200px;
+    background-color: #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    border: 1px solid #444;
+    padding: 0.5rem 0;
+    z-index: 200;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.settings-dropdown.hidden {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    visibility: hidden;
+}
+
+/* Dropdown Item */
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s;
+    min-height: 48px;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: #ffffff;
+    outline: none;
+}
+
+.dropdown-item:disabled {
+    color: #666;
+    cursor: not-allowed;
+}
+
+.dropdown-item:disabled:hover {
+    background-color: transparent;
+}
+
+.dropdown-item svg {
+    flex-shrink: 0;
+    color: #2196f3;
+}
+
+.dropdown-item:disabled svg {
+    color: #555;
+}
+
+.dropdown-item.installed {
+    color: #888;
+}
+
+.dropdown-item.installed svg {
+    color: #4caf50;
+}
+
 /* PWA Installation Modal */
 .pwa-modal {
     position: fixed;
