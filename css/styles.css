@@ -185,12 +185,14 @@ header h1 {
     justify-content: center;
     z-index: 2000;
     opacity: 1;
-    transition: opacity 0.3s ease;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
 .pwa-modal.hidden {
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
 }
 
 .pwa-modal-content {
