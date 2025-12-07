@@ -103,12 +103,18 @@ class PWAInstaller {
             });
         }
 
-        // Menu install button click
+        // Menu install button click (with touch support for mobile)
         if (this.menuInstallBtn) {
-            this.menuInstallBtn.addEventListener('click', () => {
+            const handleInstallClick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[PWAInstaller] Install button clicked');
                 this.closeSettingsMenu();
                 this.showInstallPrompt();
-            });
+            };
+
+            this.menuInstallBtn.addEventListener('click', handleInstallClick);
+            this.menuInstallBtn.addEventListener('touchend', handleInstallClick);
         }
 
         // Close menu when clicking outside
@@ -163,8 +169,12 @@ class PWAInstaller {
     }
 
     async showInstallPrompt() {
+        console.log('[PWAInstaller] showInstallPrompt called');
+        console.log('[PWAInstaller] deferredPrompt:', this.deferredPrompt);
+        console.log('[PWAInstaller] isInstallable:', this.isInstallable);
+
         if (!this.deferredPrompt) {
-            console.log('[PWAInstaller] No install prompt available');
+            console.log('[PWAInstaller] No install prompt available, showing manual instructions');
             this.showManualInstallInstructions();
             return;
         }
