@@ -34,15 +34,18 @@ A comprehensive trading position size calculator designed to help traders manage
 2. **Input Trade Parameters**:
    - **Entry Price ($)**: Your planned entry price for the stock
    - **Stop Loss ($)**: Your stop-loss price level
-   - **Setup Quality**: Rate your trade setup quality
-   - **Market Condition**: Current market environment
+   - **Risk % of Account**: Use the slider to set your risk tolerance (0.1% - 1.5%, default: 1.0%)
 
-3. **Review Calculations**:
-   - Standard position size and risk metrics
-   - Target prices and expected gains
+3. **Review Risk Calculation**:
+   - Portfolio Risk (% and $)
+   - Shares to buy based on risk parameters
+   - Total position value and position percentage of account
+
+4. **Review Total Max Position**:
+   - Maximum shares based on diversification limits
    - Position sizing formula breakdown
 
-4. **Fine-tune with ATR** (Optional):
+5. **Fine-tune with ATR** (Optional):
    - **ATR (%)**: Enter the stock's Average True Range percentage
    - Review volatility-adjusted position recommendations
 
@@ -62,23 +65,28 @@ A comprehensive trading position size calculator designed to help traders manage
 
 ## 📊 Understanding the Calculations
 
-### Standard Position Size
-- **Shares to Buy**: `Min(Capital Limit, Position Limit)`
-  - Capital Limit: 95% of account ÷ entry price
-  - Position Limit: (Account size ÷ max positions) ÷ entry price
+### Risk Calculation (Primary Method)
+The calculator uses a MIN function to determine position size based on the smaller of two calculations:
+
+- **Method 1 - Risk-Based**: `(Portfolio × Risk%) / Stop%`
+  - Calculates position size based on your risk tolerance
+- **Method 2 - Diversification**: `Portfolio / Max Positions`
+  - Limits position size based on portfolio diversification
+
+**Formula**: `Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]`
+
+### Risk Calculation Results
+- **Portfolio Risk (%)**: Your selected risk percentage from the slider
+- **Portfolio Risk ($)**: Account Size × Risk %
+- **Shares to Buy**: Calculated using the MIN formula above
 - **Total Position Value**: Shares × Entry Price
 - **Position % of Account**: (Position Value ÷ Account Size) × 100
 - **Risk per Share**: |Entry Price - Stop Loss|
 
-### Risk Analysis
-- **Dollar Risk Amount**: Risk per Share × Position Size
-- **Risk % of Account**: (Dollar Risk ÷ Account Size) × 100
-- **Max Position per Trade**: Account Size ÷ Amount of Positions
-
-### Stop Loss & Targets
-- **Risk %**: (|Entry Price - Stop Loss| ÷ Entry Price) × 100
-- **Target Price (1:5 R:R)**: Entry ± (Risk per Share × 5)
-- **Expected Gain %**: (|Target - Entry| ÷ Entry) × 100
+### Total Max Position
+- **Shares to Buy**: Maximum shares based on account ÷ max positions
+- **Total Position Value**: Shares × Entry Price
+- **Position % of Account**: (Position Value ÷ Account Size) × 100
 
 ### ATR-Adjusted Position
 The calculator adjusts position sizes based on volatility:
