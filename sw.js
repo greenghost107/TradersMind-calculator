@@ -22,7 +22,7 @@ const CACHE_STRATEGIES = {
 
 self.addEventListener('install', (event) => {
   console.log('[ServiceWorker] Install');
-  
+
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
@@ -31,6 +31,18 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('[ServiceWorker] Static assets cached successfully');
+
+        // Signal to all clients that SW is ready
+        return self.clients.matchAll();
+      })
+      .then((clients) => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_INSTALLED',
+            timestamp: Date.now()
+          });
+        });
+
         return self.skipWaiting();
       })
       .catch((error) => {
@@ -165,6 +177,14 @@ async function handleDynamicRequest(request) {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data && event.data.type === 'CHECK_INSTALL_READY') {
+    // Respond to install readiness check
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({
+        ready: true,
+        timestamp: Date.now()
+      });
+    }
   }
 });
 

@@ -39,5 +39,20 @@
   "lang": "en",
   "dir": "ltr",
   "scope": "./",
-  "prefer_related_applications": false
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+tradersmind",
+      "url": "/?protocol=%s"
+    }
+  ]
 }

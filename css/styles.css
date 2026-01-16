@@ -817,7 +817,134 @@ select:focus-visible {
     color: #d32f2f;
 }
 
+/* Android Visual Hints */
+.browser-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2196f3;
+    vertical-align: middle;
+}
+
+.location-hint {
+    display: block;
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+.install-steps {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.install-steps li {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.visual-hint {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: #e3f2fd;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.arrow-indicator {
+    font-size: 3rem;
+    color: #2196f3;
+    animation: bounce 2s infinite;
+    line-height: 1;
+}
+
+.hint-text {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0) rotate(-45deg);
+    }
+    40% {
+        transform: translateY(-10px) rotate(-45deg);
+    }
+    60% {
+        transform: translateY(-5px) rotate(-45deg);
+    }
+}
+
 /* iOS Visual Guide */
+.step-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+}
+
+.device-specific {
+    display: block;
+    margin-top: 0.5rem;
+    line-height: 1.8;
+}
+
+.safari-share-icon {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.25rem;
+}
+
+.visual-hint-ios {
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.share-button-indicator p {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.mock-share-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+    }
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 122, 255, 0.5);
+    }
+}
+
+/* iOS Wrong Browser Warning */
+.install-instructions.ios.error .action-required {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fff3e0;
+    border-left: 4px solid #ff9800;
+    border-radius: 4px;
+}
+
+/* iOS Visual Guide - Original Styles */
 .ios-visual-guide {
     margin: 1rem 0;
 }
@@ -835,16 +962,17 @@ select:focus-visible {
 
 .step-number {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    background-color: #2196f3;
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #2196f3, #1976d2);
     color: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
 }
 
 .step-content {
@@ -887,5 +1015,33 @@ select:focus-visible {
 
     .step-hint {
         color: #888;
+    }
+
+    .visual-hint {
+        background-color: #001f3f;
+        border: 1px solid #2196f3;
+    }
+
+    .hint-text {
+        color: #90caf9;
+    }
+
+    .visual-hint-ios {
+        background: linear-gradient(135deg, #001f3f 0%, #003d7a 100%);
+        border: 1px solid #2196f3;
+    }
+
+    .share-button-indicator p {
+        color: #90caf9;
+    }
+
+    .mock-share-button {
+        background-color: #1a1a1a;
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+    }
+
+    .install-instructions.ios.error .action-required {
+        background-color: #332200;
+        border-left-color: #ff9800;
     }
 }

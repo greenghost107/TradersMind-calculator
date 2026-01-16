@@ -164,7 +164,7 @@ class TradersMindApp {
         this.elements.riskTotalPositionValue.textContent = result.formatted.riskTotalPositionValue;
         this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
         this.elements.riskRiskPerShare.textContent = result.formatted.riskPerShare;
-        
+
         // Show/hide constraint label
         if (this.elements.riskConstraintLabel) {
             if (result.riskConstrainedByPositions) {
@@ -173,16 +173,16 @@ class TradersMindApp {
                 this.elements.riskConstraintLabel.style.display = 'none';
             }
         }
-        
+
         // Total Max Position section (original calculation) - Now second
         this.elements.sharesToBuy.textContent = result.formatted.originalShares;
         this.elements.totalPositionValue.textContent = result.formatted.originalTotalPositionValue;
         this.elements.positionPercentage.textContent = result.formatted.originalPositionPercentage;
         this.elements.riskPerShare.textContent = result.formatted.riskPerShare;
-        
+
         this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
         this.elements.formulaResult.textContent = result.positionSizingFormula.result;
-        
+
         this.elements.atrSharesDisplay.textContent = result.formatted.atrShares;
         this.elements.atrPositionValueDisplay.textContent = result.formatted.atrPositionValue;
         this.elements.positionDifference.textContent = result.formatted.positionDifference;
@@ -190,6 +190,11 @@ class TradersMindApp {
         this.elements.positionValidation.textContent = result.positionValidation.message;
 
         this.updateResultColors(result);
+
+        // Dispatch calculation complete event for PWA engagement tracking
+        document.dispatchEvent(new CustomEvent('calculation-complete', {
+            detail: { result: result }
+        }));
     }
 
     updateResultColors(result) {
