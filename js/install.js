@@ -261,7 +261,11 @@ class PWAInstaller {
         this.saveInstallState('auto_shown');
     }
 
-    // Web Share API for iOS
+    // Web Share API for iOS (DEPRECATED - doesn't work for PWA installation)
+    // The Web Share API opens a share menu for sharing content with others (Messages, Mail, etc.)
+    // but does NOT provide access to "Add to Home Screen" functionality.
+    // Keeping this code commented for reference.
+    /*
     async triggerIOSShareMenu() {
         // Check if Web Share API is available (iOS Safari 13+)
         if (!navigator.share) {
@@ -298,6 +302,7 @@ class PWAInstaller {
         console.log('[PWAInstaller] Showing iOS manual instructions');
         // The modal is already showing, just let it display the instructions
     }
+    */
 
     // Notification permission request
     async requestNotificationPermission() {
@@ -458,17 +463,6 @@ class PWAInstaller {
                 if (action === 'install') {
                     // Has native prompt - trigger it
                     await this.showInstallPrompt();
-                } else if (action === 'ios-share') {
-                    // iOS Safari - Try Web Share API
-                    const shareSuccess = await this.triggerIOSShareMenu();
-
-                    if (!shareSuccess) {
-                        // Fallback: Show detailed instructions
-                        this.showIOSManualInstructions();
-                    } else {
-                        // Close modal after showing share menu
-                        this.hideInstallModal();
-                    }
                 } else if (action === 'open-safari') {
                     // iOS non-Safari - Auto-open in Safari
                     const safariURL = window.location.href;
@@ -621,12 +615,14 @@ class PWAInstaller {
         if (!this.pwaInstructions) return;
 
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isAndroid = /Android/.test(navigator.userAgent);
+        const isAndroid = this.isAndroidDevice();
         const hasPrompt = !!this.deferredPrompt;
         const isHTTPS = window.location.protocol === 'https:';
 
         // Get diagnostics to understand WHY prompt isn't available
         const diag = this.getInstallDiagnostics();
+
+        console.log('[PWAInstaller] Modal instructions:', { isIOS, isAndroid, hasPrompt, isHTTPS });
 
         let instructionHTML = '';
         let buttonText = 'Add to Home Screen';
@@ -648,14 +644,11 @@ class PWAInstaller {
                 buttonText = 'Open in Safari';
                 buttonAction = 'open-safari'; // New action
             } else {
-                // User is in Safari - Try Web Share API first
+                // User is in Safari - Show manual instructions (Web Share API doesn't work for PWA installation)
                 instructionHTML = `
                     <div class="install-instructions ios">
                         <h3>Install on iPhone/iPad</h3>
-                        <p>Tap the button below to add this app to your home screen.</p>
-                        <div class="install-steps-preview">
-                            <p class="note">This will open your Share menu. Look for "Add to Home Screen" option.</p>
-                        </div>
+                        <p>To add this app to your home screen:</p>
                         <div class="ios-visual-guide">
                             <div class="step-container">
                                 <div class="step-number">1</div>
@@ -692,8 +685,8 @@ class PWAInstaller {
                         </div>
                     </div>
                 `;
-                buttonText = 'Add to Home Screen';
-                buttonAction = 'ios-share'; // New action: trigger share menu
+                buttonText = 'Got It';
+                buttonAction = 'close'; // Just close the modal after user reads instructions
             }
         }
         // Has native prompt support (Chrome/Edge with beforeinstallprompt)
@@ -1048,11 +1041,50 @@ class PWAInstaller {
     detectPlatform() {
         const ua = navigator.userAgent;
         if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
-        if (/Android/.test(ua)) return 'Android';
+        if (this.isAndroidDevice()) return 'Android';
         if (/Windows/.test(ua)) return 'Windows';
         if (/Mac/.test(ua)) return 'macOS';
         if (/Linux/.test(ua)) return 'Linux';
         return 'Unknown';
+    }
+
+    isAndroidDevice() {
+        // Multi-layered Android detection with fallbacks
+        const ua = navigator.userAgent;
+
+        // Primary: User Agent string check
+        if (/Android/.test(ua)) {
+            console.log('[PWAInstaller] Android detected via user agent');
+            return true;
+        }
+
+        // Fallback 1: navigator.userAgentData (new API)
+        if (navigator.userAgentData && navigator.userAgentData.platform) {
+            const platform = navigator.userAgentData.platform.toLowerCase();
+            if (platform.includes('android')) {
+                console.log('[PWAInstaller] Android detected via userAgentData');
+                return true;
+            }
+        }
+
+        // Fallback 2: navigator.platform check
+        if (navigator.platform) {
+            const platform = navigator.platform.toLowerCase();
+            if (platform.includes('android') || platform.includes('linux arm')) {
+                console.log('[PWAInstaller] Android detected via navigator.platform');
+                return true;
+            }
+        }
+
+        // Fallback 3: Check for Android-specific properties
+        if ('ontouchstart' in window && /Linux/.test(ua) && !/X11/.test(ua)) {
+            // Touch-enabled Linux (not desktop) is likely Android
+            console.log('[PWAInstaller] Android detected via Linux + touch heuristic');
+            return true;
+        }
+
+        console.log('[PWAInstaller] Android not detected');
+        return false;
     }
 
     forceReload() {
