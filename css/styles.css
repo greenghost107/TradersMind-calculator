@@ -750,3 +750,64 @@ select:focus-visible {
         border-color: #30363d;
     }
 }
+
+/* Install Instructions Styling */
+.install-instructions {
+    text-align: left;
+    padding: 1rem;
+}
+
+.install-instructions h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--primary-color, #2196f3);
+}
+
+.install-instructions ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.install-instructions li {
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+}
+
+.install-instructions .note {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: #e3f2fd;
+    border-left: 3px solid #2196f3;
+    font-size: 0.9rem;
+}
+
+.install-instructions .warning {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background-color: #fff3e0;
+    border-left: 3px solid #ff9800;
+    font-size: 0.9rem;
+    color: #e65100;
+}
+
+.install-instructions .benefit {
+    display: inline-block;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background-color: #f1f8e9;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #33691e;
+}
+
+.install-instructions .supported-browsers {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: #666;
+    font-style: italic;
+}
+
+.install-instructions svg {
+    vertical-align: middle;
+    margin: 0 2px;
+}

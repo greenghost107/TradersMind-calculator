@@ -131,6 +131,90 @@ The calculator adjusts position sizes based on volatility:
 - **JavaScript enabled**
 - **Internet connection** (for initial load, works offline after installation)
 
+## 🚀 Deployment
+
+### Requirements for PWA Installation
+- ✅ HTTPS connection (required for Chrome/Edge install prompt)
+- ✅ Valid manifest.json
+- ✅ Registered service worker
+- ✅ User engagement (can't install on first page load)
+
+### Deploy to Vercel (Recommended)
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+```
+
+The included `vercel.json` configuration ensures proper headers for PWA functionality.
+
+### Deploy to Netlify
+```bash
+# Install Netlify CLI
+npm i -g netlify-cli
+
+# Deploy
+netlify deploy --prod --dir=.
+```
+
+The included `netlify.toml` configuration sets up proper headers and HTTPS redirects.
+
+### Local HTTPS Testing
+For testing PWA installation locally, you need HTTPS:
+
+```bash
+# Generate certificate (one-time setup)
+# Install mkcert first:
+# - macOS: brew install mkcert
+# - Windows: choco install mkcert
+
+mkcert -install
+mkcert localhost 127.0.0.1 ::1
+
+# Run with HTTPS
+npm run dev:https
+
+# Open in browser
+# Visit https://localhost:8443
+```
+
+### Testing PWA Installation
+
+**Desktop (Chrome/Edge):**
+1. Open app via HTTPS URL
+2. Interact with page (click, scroll, etc.)
+3. Look for install icon in address bar OR
+4. Click "Add to Home Screen" in menu
+5. Browser should show native install dialog
+
+**iOS (Safari only):**
+1. Open app in Safari browser
+2. Tap Share button at bottom
+3. Scroll and tap "Add to Home Screen"
+4. Tap "Add" to confirm
+
+**Android (Chrome):**
+1. Open app in Chrome browser
+2. Interact with page
+3. Wait for install prompt or tap menu
+4. Tap "Add to Home screen" or "Install app"
+5. Follow prompts
+
+### Troubleshooting
+Check browser console for diagnostics:
+```javascript
+// View installation diagnostics
+window.pwaInstaller.getInstallDiagnostics()
+```
+
+Common blockers:
+- **HTTP instead of HTTPS**: Deploy to Vercel/Netlify or use local HTTPS
+- **Service worker not registered**: Check console for registration errors
+- **No user engagement**: Interact with the page before expecting install prompt
+- **iOS Safari**: Must use Share menu (no automatic prompt)
+
 ## 🔧 File Structure
 
 ```

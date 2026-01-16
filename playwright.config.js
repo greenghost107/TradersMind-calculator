@@ -8,9 +8,12 @@ module.exports = defineConfig({
   workers: 1,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:8080',
+    baseURL: process.env.TEST_HTTPS === 'true'
+      ? 'https://localhost:8443'
+      : 'http://localhost:8080',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    ignoreHTTPSErrors: true, // For self-signed certs in testing
   },
   projects: [
     {
@@ -19,8 +22,13 @@ module.exports = defineConfig({
     },
   ],
   webServer: {
-    command: 'npx http-server . -p 8080',
-    url: 'http://localhost:8080',
+    command: process.env.TEST_HTTPS === 'true'
+      ? 'npm run dev:https'
+      : 'npm run dev',
+    url: process.env.TEST_HTTPS === 'true'
+      ? 'https://localhost:8443'
+      : 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
+    ignoreHTTPSErrors: true,
   },
 });

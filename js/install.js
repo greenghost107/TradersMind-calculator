@@ -14,6 +14,16 @@ class PWAInstaller {
         this.registerServiceWorker();
         this.attachEventListeners();
         this.checkInstallationStatus();
+
+        // Log diagnostics after a brief delay to let everything initialize
+        setTimeout(() => {
+            const diagnostics = this.getInstallDiagnostics();
+            console.log('[PWAInstaller] Installation Diagnostics:', diagnostics);
+
+            if (diagnostics.blockers.length > 0) {
+                console.warn('[PWAInstaller] Installation blockers detected:', diagnostics.blockers);
+            }
+        }, 1000);
     }
 
     bindElements() {
@@ -257,25 +267,77 @@ class PWAInstaller {
 
     updateModalInstructions() {
         if (!this.pwaInstructions) return;
-        
+
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         const isAndroid = /Android/.test(navigator.userAgent);
-        
-        let instructionText = '';
-        
-        if (!this.deferredPrompt) {
-            if (isIOS) {
-                instructionText = `To install on iOS:<br>1. Tap the Share button <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92S19.61 16.08 18 16.08z"/></svg><br>2. Scroll down and tap "Add to Home Screen"<br>3. Tap "Add" to confirm`;
-            } else if (isAndroid) {
-                instructionText = `To install on Android:<br>1. Tap the menu (⋮) in your browser<br>2. Select "Add to Home screen" or "Install app"<br>3. Tap "Add" or "Install" to confirm`;
-            } else {
-                instructionText = `To install this app:<br>1. Look for an install icon in your browser's address bar<br>2. Or check your browser's menu for "Install" or "Add to Home Screen"<br>3. Follow the prompts to install`;
-            }
+        const hasPrompt = !!this.deferredPrompt;
+        const isHTTPS = window.location.protocol === 'https:';
+
+        let instructionHTML = '';
+
+        // Different instructions based on platform and conditions
+        if (isIOS) {
+            instructionHTML = `
+                <div class="install-instructions ios">
+                    <h3>Install on iOS/iPadOS</h3>
+                    <ol>
+                        <li>Tap the <strong>Share</strong> button <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/></svg> in Safari</li>
+                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Tap <strong>"Add"</strong> to confirm</li>
+                    </ol>
+                    <p class="note">💡 Note: This feature only works in Safari browser</p>
+                </div>
+            `;
+        } else if (hasPrompt) {
+            instructionHTML = `
+                <div class="install-instructions chrome">
+                    <h3>Install This App</h3>
+                    <p>Click the button below to install TradersMind Calculator as an app on your device.</p>
+                    <p class="benefit">✓ Works offline &nbsp;|&nbsp; ✓ Fast access &nbsp;|&nbsp; ✓ App-like experience</p>
+                </div>
+            `;
+        } else if (isAndroid) {
+            instructionHTML = `
+                <div class="install-instructions android">
+                    <h3>Install on Android</h3>
+                    <ol>
+                        <li>Tap the <strong>menu</strong> (⋮) in your browser</li>
+                        <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                        <li>Tap <strong>"Install"</strong> to confirm</li>
+                    </ol>
+                    ${!isHTTPS ? '<p class="warning">⚠️ Note: Installation requires HTTPS connection</p>' : ''}
+                </div>
+            `;
         } else {
-            instructionText = 'Click "Add to Home Screen" below to install this app on your device.';
+            // Desktop or other browsers
+            instructionHTML = `
+                <div class="install-instructions desktop">
+                    <h3>Install This App</h3>
+                    ${!isHTTPS ?
+                        '<p class="warning">⚠️ <strong>HTTPS Required:</strong> This app must be accessed via HTTPS to enable installation.</p>'
+                        : ''}
+                    <p>To install this app:</p>
+                    <ol>
+                        <li>Look for an <strong>install icon</strong> (⊕) in your browser's address bar</li>
+                        <li>Or open your browser's <strong>menu</strong> and select "Install app"</li>
+                        <li>Follow the prompts to install</li>
+                    </ol>
+                    <p class="supported-browsers">Supported browsers: Chrome, Edge, Opera</p>
+                </div>
+            `;
         }
-        
-        this.pwaInstructions.innerHTML = `<p>${instructionText}</p>`;
+
+        this.pwaInstructions.innerHTML = instructionHTML;
+
+        // Hide/show the install action button based on prompt availability
+        if (this.pwaInstallAction) {
+            if (hasPrompt) {
+                this.pwaInstallAction.classList.remove('hidden');
+                this.pwaInstallAction.textContent = 'Install Now';
+            } else {
+                this.pwaInstallAction.classList.add('hidden');
+            }
+        }
     }
 
     showManualInstallInstructions() {
@@ -297,16 +359,20 @@ class PWAInstaller {
     }
 
     updateInstallButtonVisibility() {
-        const shouldShow = this.isInstallable && !this.isInstalled;
+        // Always show install UI, but adapt behavior by platform/state
+        const isStandalone = this.isStandalone();
+        const hasPromptSupport = this.deferredPrompt !== null;
 
         // Update floating action button
         if (this.installButton) {
-            if (shouldShow) {
-                this.installButton.classList.remove('hidden');
-                this.installButton.setAttribute('aria-hidden', 'false');
-            } else {
+            if (isStandalone) {
+                // Already installed
                 this.installButton.classList.add('hidden');
                 this.installButton.setAttribute('aria-hidden', 'true');
+            } else {
+                // Show install button for all non-installed scenarios
+                this.installButton.classList.remove('hidden');
+                this.installButton.setAttribute('aria-hidden', 'false');
             }
         }
 
@@ -315,7 +381,12 @@ class PWAInstaller {
             this.updateMenuInstallState();
         }
 
-        console.log(`[PWAInstaller] Install button visibility: ${shouldShow ? 'visible' : 'hidden'}`);
+        console.log(`[PWAInstaller] Install button state:`, {
+            isStandalone,
+            hasPromptSupport,
+            deferredPrompt: !!this.deferredPrompt,
+            visible: !isStandalone
+        });
     }
 
     // Settings Menu Methods
@@ -349,16 +420,29 @@ class PWAInstaller {
     updateMenuInstallState() {
         if (!this.menuInstallBtn || !this.menuInstallText) return;
 
-        if (this.isInstalled || this.isStandalone()) {
+        const isStandalone = this.isStandalone();
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+        if (isStandalone) {
             // Already installed
             this.menuInstallBtn.disabled = true;
             this.menuInstallBtn.classList.add('installed');
             this.menuInstallText.textContent = 'Already Installed';
-        } else {
-            // Can be installed or show instructions
+        } else if (isIOS) {
+            // iOS - show instructions
+            this.menuInstallBtn.disabled = false;
+            this.menuInstallBtn.classList.remove('installed');
+            this.menuInstallText.textContent = 'Install App (iOS)';
+        } else if (this.deferredPrompt) {
+            // Has native prompt support
             this.menuInstallBtn.disabled = false;
             this.menuInstallBtn.classList.remove('installed');
             this.menuInstallText.textContent = 'Add to Home Screen';
+        } else {
+            // No prompt support, show instructions
+            this.menuInstallBtn.disabled = false;
+            this.menuInstallBtn.classList.remove('installed');
+            this.menuInstallText.textContent = 'Install Instructions';
         }
     }
 
@@ -402,6 +486,79 @@ class PWAInstaller {
             hasServiceWorker: 'serviceWorker' in navigator,
             supportsManifest: 'manifest' in document.createElement('link')
         };
+    }
+
+    getInstallDiagnostics() {
+        const diag = {
+            timestamp: new Date().toISOString(),
+            protocol: window.location.protocol,
+            isHTTPS: window.location.protocol === 'https:',
+            isLocalhost: window.location.hostname === 'localhost',
+            browser: this.detectBrowser(),
+            platform: this.detectPlatform(),
+            isStandalone: this.isStandalone(),
+            hasServiceWorker: 'serviceWorker' in navigator,
+            serviceWorkerRegistered: false,
+            manifestLinked: !!document.querySelector('link[rel="manifest"]'),
+            beforeInstallPromptSupport: 'onbeforeinstallprompt' in window,
+            beforeInstallPromptFired: !!this.deferredPrompt,
+            installationPossible: false,
+            blockers: []
+        };
+
+        // Check service worker registration
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            diag.serviceWorkerRegistered = true;
+        }
+
+        // Determine if installation is possible
+        if (diag.isStandalone) {
+            diag.installationPossible = true;
+            diag.status = 'Already installed';
+        } else if (diag.platform === 'iOS') {
+            diag.installationPossible = true;
+            diag.status = 'Use Safari Share menu to install';
+        } else if (diag.beforeInstallPromptFired) {
+            diag.installationPossible = true;
+            diag.status = 'Ready to install via browser prompt';
+        } else {
+            diag.status = 'Installation not available';
+
+            // Identify blockers
+            if (!diag.isHTTPS && !diag.isLocalhost) {
+                diag.blockers.push('HTTPS required (currently using HTTP)');
+            }
+            if (!diag.serviceWorkerRegistered) {
+                diag.blockers.push('Service worker not registered');
+            }
+            if (!diag.manifestLinked) {
+                diag.blockers.push('Manifest not linked in HTML');
+            }
+            if (!diag.beforeInstallPromptSupport) {
+                diag.blockers.push('Browser does not support install prompts');
+            }
+        }
+
+        return diag;
+    }
+
+    detectBrowser() {
+        const ua = navigator.userAgent;
+        if (/Edg/.test(ua)) return 'Edge';
+        if (/Chrome/.test(ua) && !/Edg/.test(ua)) return 'Chrome';
+        if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
+        if (/Firefox/.test(ua)) return 'Firefox';
+        return 'Unknown';
+    }
+
+    detectPlatform() {
+        const ua = navigator.userAgent;
+        if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
+        if (/Android/.test(ua)) return 'Android';
+        if (/Windows/.test(ua)) return 'Windows';
+        if (/Mac/.test(ua)) return 'macOS';
+        if (/Linux/.test(ua)) return 'Linux';
+        return 'Unknown';
     }
 
     forceReload() {

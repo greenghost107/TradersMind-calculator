@@ -13,7 +13,9 @@
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "dev": "http-server . -p 8080 --cors",
+    "dev:https": "http-server . -p 8443 --ssl --cert ./localhost.pem --key ./localhost-key.pem"
   },
   "repository": {
     "type": "git",
