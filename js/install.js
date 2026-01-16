@@ -376,8 +376,20 @@ class PWAInstaller {
     }
 
     showUpdateNotification() {
-        if (confirm('A new version is available. Reload to update?')) {
-            window.location.reload();
+        if (confirm('A new version is available. Update now?')) {
+            // Tell service worker to skip waiting and activate immediately
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'SKIP_WAITING'
+                });
+            }
+            // Reload after a short delay to let the message be processed
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        } else {
+            // User declined - update will happen on next page load
+            console.log('[PWAInstaller] User deferred update');
         }
     }
 
@@ -463,10 +475,6 @@ class PWAInstaller {
                 if (action === 'install') {
                     // Has native prompt - trigger it
                     await this.showInstallPrompt();
-                } else if (action === 'open-safari') {
-                    // iOS non-Safari - Auto-open in Safari
-                    const safariURL = window.location.href;
-                    window.location = safariURL; // iOS will prompt to open in Safari
                 } else if (action === 'close') {
                     // iOS or waiting for engagement - just close modal
                     this.hideInstallModal();
@@ -474,11 +482,16 @@ class PWAInstaller {
                     // iOS wrong browser - copy URL to clipboard
                     try {
                         await navigator.clipboard.writeText(window.location.href);
-                        // Update button to show success
+                        // Update button to show success (keep modal open so user can read all steps)
+                        const originalText = this.pwaInstallAction.textContent;
                         this.pwaInstallAction.textContent = '✓ URL Copied!';
+                        this.pwaInstallAction.classList.add('success');
+
+                        // Reset button after 2 seconds but keep modal open
                         setTimeout(() => {
-                            this.hideInstallModal();
-                        }, 1500);
+                            this.pwaInstallAction.textContent = originalText;
+                            this.pwaInstallAction.classList.remove('success');
+                        }, 2000);
                     } catch (err) {
                         console.error('[PWAInstaller] Failed to copy URL:', err);
                         // Fallback: show URL to copy manually
@@ -601,13 +614,23 @@ class PWAInstaller {
 
         this.updateModalInstructions();
         this.pwaModal.classList.remove('hidden');
+
+        // iOS-compatible scroll prevention
+        document.body.classList.add('modal-open');
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
         document.body.style.overflow = 'hidden';
     }
 
     hideInstallModal() {
         if (!this.pwaModal) return;
-        
+
         this.pwaModal.classList.add('hidden');
+
+        // Reset iOS scroll prevention
+        document.body.classList.remove('modal-open');
+        document.body.style.position = '';
+        document.body.style.width = '';
         document.body.style.overflow = '';
     }
 
@@ -630,19 +653,42 @@ class PWAInstaller {
 
         // iOS: Safari Share menu flow (no native prompt API)
         if (isIOS) {
-            const browser = this.detectBrowser();
-
-            if (browser !== 'Safari') {
-                // User is on iOS but not in Safari - Auto-open in Safari
+            if (!this.isInIOSSafari()) {
+                // User is on iOS but not in Safari - Need to copy URL and switch browsers
                 instructionHTML = `
                     <div class="install-instructions ios error">
-                        <h3>Open in Safari</h3>
-                        <p>To install this app, we need to open it in Safari.</p>
-                        <p class="note">Tap the button below to automatically open in Safari.</p>
+                        <h3>Switch to Safari</h3>
+                        <p>To install this app, you need to open it in Safari.</p>
+                        <div class="install-guide">
+                            <div class="step-container">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <p><strong>Copy the URL</strong> by tapping the button below</p>
+                                </div>
+                            </div>
+                            <div class="step-container">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <p><strong>Open Safari</strong> on your device</p>
+                                </div>
+                            </div>
+                            <div class="step-container">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <p><strong>Paste the URL</strong> in Safari's address bar</p>
+                                </div>
+                            </div>
+                            <div class="step-container">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <p><strong>Follow the installation instructions</strong> in Safari</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 `;
-                buttonText = 'Open in Safari';
-                buttonAction = 'open-safari'; // New action
+                buttonText = 'Copy URL';
+                buttonAction = 'copy-url';
             } else {
                 // User is in Safari - Show manual instructions (Web Share API doesn't work for PWA installation)
                 instructionHTML = `
@@ -1036,6 +1082,25 @@ class PWAInstaller {
 
     isInSafari() {
         return this.detectBrowser() === 'Safari';
+    }
+
+    isInIOSSafari() {
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua);
+
+        if (!isIOS) return false;
+
+        // iOS Chrome has 'CriOS' in UA
+        if (/CriOS/.test(ua)) return false;
+
+        // iOS Firefox has 'FxiOS' in UA
+        if (/FxiOS/.test(ua)) return false;
+
+        // iOS Edge has 'EdgiOS' in UA
+        if (/EdgiOS/.test(ua)) return false;
+
+        // All other iOS browsers are Safari or WebView
+        return true;
     }
 
     detectPlatform() {

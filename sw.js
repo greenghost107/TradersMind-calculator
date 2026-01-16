@@ -43,7 +43,8 @@ self.addEventListener('install', (event) => {
           });
         });
 
-        return self.skipWaiting();
+        // Don't call skipWaiting() immediately - let the app control when to activate
+        // skipWaiting() is now controlled via message handler (see 'SKIP_WAITING' message below)
       })
       .catch((error) => {
         console.error('[ServiceWorker] Failed to cache static assets:', error);
