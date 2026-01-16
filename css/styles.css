@@ -817,6 +817,52 @@ select:focus-visible {
     color: #d32f2f;
 }
 
+/* iOS Visual Guide */
+.ios-visual-guide {
+    margin: 1rem 0;
+}
+
+.ios-step {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+}
+
+.ios-step:last-child {
+    margin-bottom: 0;
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background-color: #2196f3;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content p {
+    margin: 0 0 0.25rem 0;
+    color: #e0e0e0;
+    line-height: 1.5;
+}
+
+.step-hint {
+    font-size: 0.85rem;
+    color: #b0b0b0;
+    font-style: italic;
+}
+
 /* Dark mode support for new messages */
 @media (prefers-color-scheme: dark) {
     .install-instructions.error h3 {
@@ -833,5 +879,13 @@ select:focus-visible {
         background-color: #001f3f;
         border-left-color: #2196f3;
         color: #90caf9;
+    }
+
+    .step-content p {
+        color: #e0e0e0;
+    }
+
+    .step-hint {
+        color: #888;
     }
 }

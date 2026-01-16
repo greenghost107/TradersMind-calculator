@@ -107,7 +107,7 @@ class PWAInstaller {
         if (this.installButton) {
             this.installButton.addEventListener('click', () => {
                 console.log('[PWAInstaller] FAB install button clicked');
-                this.showInstallModal();
+                this.handleInstallButtonClick();
             });
         }
 
@@ -128,7 +128,7 @@ class PWAInstaller {
 
                 this.closeSettingsMenu();
                 setTimeout(() => {
-                    this.showInstallModal();
+                    this.handleInstallButtonClick();
                 }, 100);
             });
         }
@@ -260,9 +260,24 @@ class PWAInstaller {
         }
     }
 
+    async handleInstallButtonClick() {
+        console.log('[PWAInstaller] handleInstallButtonClick called');
+        console.log('[PWAInstaller] deferredPrompt available:', !!this.deferredPrompt);
+
+        // If we have the native prompt available (Android Chrome), trigger it directly
+        if (this.deferredPrompt) {
+            console.log('[PWAInstaller] Native prompt available, triggering directly');
+            await this.showInstallPrompt();
+        } else {
+            // No native prompt - show modal with platform-specific instructions
+            console.log('[PWAInstaller] No native prompt, showing modal with instructions');
+            this.showInstallModal();
+        }
+    }
+
     showInstallModal() {
         if (!this.pwaModal) return;
-        
+
         this.updateModalInstructions();
         this.pwaModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -295,15 +310,33 @@ class PWAInstaller {
             instructionHTML = `
                 <div class="install-instructions ios">
                     <h3>Install on iOS/iPadOS</h3>
-                    <ol>
-                        <li>Tap the <strong>Share</strong> button <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/></svg> in Safari</li>
-                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
-                        <li>Tap <strong>"Add"</strong> to confirm</li>
-                    </ol>
-                    <p class="note">💡 Note: This feature only works in Safari browser</p>
+                    <div class="ios-visual-guide">
+                        <div class="ios-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <p>Tap the <strong>Share</strong> button <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.11 0-2-.9-2-2V10c0-1.11.89-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .89 2 2z"/></svg></p>
+                                <p class="step-hint">Located at the bottom of Safari (or top on iPad)</p>
+                            </div>
+                        </div>
+                        <div class="ios-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <p>Scroll down in the menu</p>
+                                <p class="step-hint">Find <strong>"Add to Home Screen"</strong> option</p>
+                            </div>
+                        </div>
+                        <div class="ios-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <p>Tap <strong>"Add"</strong> to confirm</p>
+                                <p class="step-hint">The app will appear on your home screen</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="note">💡 This only works in Safari browser. If you're using another browser, please open this page in Safari.</p>
                 </div>
             `;
-            buttonText = 'Got It';
+            buttonText = 'Got It - Show Me Safari';
             buttonAction = 'close'; // Button will close modal
         }
         // Has native prompt support (Chrome/Edge with beforeinstallprompt)

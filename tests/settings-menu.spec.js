@@ -42,13 +42,20 @@ test('dropdown closes on Escape key', async ({ page }) => {
   await expect(dropdown).toBeHidden();
 });
 
-// Test 5: Contains "Add to Home Screen"
-test('Add to Home Screen option is in menu', async ({ page }) => {
+// Test 5: Contains install option in menu
+test('Install option is in menu', async ({ page }) => {
   await page.goto('/');
   await page.locator('#settings-menu-btn').click();
   const installBtn = page.locator('#menu-install-btn');
   await expect(installBtn).toBeVisible();
-  await expect(installBtn).toContainText('Add to Home Screen');
+
+  // Text varies based on platform and prompt availability:
+  // - "Add to Home Screen" (when prompt available)
+  // - "Install Instructions" (when no prompt)
+  // - "Install App (iOS)" (on iOS)
+  // - "Already Installed" (when installed)
+  const btnText = await installBtn.textContent();
+  expect(btnText).toMatch(/Add to Home Screen|Install Instructions|Install App|Already Installed/i);
 });
 
 // Test 6: ARIA attributes correct

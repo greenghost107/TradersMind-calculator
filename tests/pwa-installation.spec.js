@@ -6,7 +6,7 @@ test.describe('PWA Installation', () => {
     await context.grantPermissions(['notifications']);
   });
 
-  test('should show install prompt when clicking Add to Home Screen button', async ({ page, context }) => {
+  test('should trigger native prompt directly when beforeinstallprompt is available', async ({ page, context }) => {
     // Navigate to the app
     await page.goto('/');
 
@@ -35,7 +35,7 @@ test.describe('PWA Installation', () => {
       const beforeInstallPromptEvent = new Event('beforeinstallprompt');
       beforeInstallPromptEvent.preventDefault = () => {};
       beforeInstallPromptEvent.prompt = async () => {
-        console.log('[TEST] Mock prompt() called');
+        console.log('[PWAInstaller] Native prompt triggered!');
         window.__pwaPromptCalled = true;
         return Promise.resolve();
       };
@@ -55,47 +55,24 @@ test.describe('PWA Installation', () => {
     const menuInstallBtn = page.locator('#menu-install-btn');
     await expect(menuInstallBtn).toBeVisible();
 
-    // Click the install button in menu
+    // Click the install button in menu - should trigger prompt directly
     await menuInstallBtn.click();
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    // Verify modal appears
-    const modal = page.locator('#pwa-install-modal');
-    await expect(modal).not.toHaveClass(/hidden/);
-
-    // Get initial console logs
-    const consoleLogs = [];
-    page.on('console', msg => {
-      if (msg.text().includes('[PWAInstaller]')) {
-        consoleLogs.push(msg.text());
-      }
-    });
-
-    // Click "Add to Home Screen" button in modal
-    const installActionBtn = page.locator('#pwa-install-action');
-    await expect(installActionBtn).toBeVisible();
-    await installActionBtn.click();
-
-    // Wait for the install flow to complete
-    await page.waitForTimeout(1000);
-
-    // Verify the install prompt was called
+    // Verify the install prompt was called DIRECTLY (no modal)
     const promptCalled = await page.evaluate(() => {
       return window.__pwaPromptCalled === true;
     });
 
-    // This will FAIL initially because of the bug
     expect(promptCalled).toBe(true);
 
     // Check console logs for expected flow
-    await page.waitForTimeout(500);
     const logs = await page.evaluate(() => {
       return window.__pwaLogs || [];
     });
 
-    expect(logs).toContain('[PWAInstaller] Install action button clicked');
-    expect(logs).toContain('[PWAInstaller] showInstallPrompt called');
-    expect(logs).toContain('[PWAInstaller] Showing browser install prompt...');
+    expect(logs.some(log => log.includes('Native prompt available, triggering directly'))).toBe(true);
+    expect(logs.some(log => log.includes('Showing browser install prompt'))).toBe(true);
   });
 
   test('should handle install acceptance correctly', async ({ page, context }) => {
@@ -121,7 +98,7 @@ test.describe('PWA Installation', () => {
       const beforeInstallPromptEvent = new Event('beforeinstallprompt');
       beforeInstallPromptEvent.preventDefault = () => {};
       beforeInstallPromptEvent.prompt = async () => {
-        console.log('[TEST] Mock prompt() called');
+        console.log('[PWAInstaller] Native prompt triggered!');
         window.__pwaPromptCalled = true;
         return Promise.resolve();
       };
@@ -132,23 +109,13 @@ test.describe('PWA Installation', () => {
 
     await page.waitForTimeout(500);
 
-    // Open modal via FAB button
+    // Click FAB button - should trigger prompt directly
     const fabBtn = page.locator('#install-btn');
     if (await fabBtn.isVisible()) {
       await fabBtn.click();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
 
-      // Verify modal appears
-      const modal = page.locator('#pwa-install-modal');
-      await expect(modal).not.toHaveClass(/hidden/);
-
-      // Click "Add to Home Screen" in modal
-      const installActionBtn = page.locator('#pwa-install-action');
-      await expect(installActionBtn).toBeVisible();
-      await installActionBtn.click();
-      await page.waitForTimeout(1000);
-
-      // Verify prompt was triggered
+      // Verify prompt was triggered directly (no modal)
       const promptCalled = await page.evaluate(() => window.__pwaPromptCalled);
       expect(promptCalled).toBe(true);
 
@@ -180,7 +147,7 @@ test.describe('PWA Installation', () => {
       const beforeInstallPromptEvent = new Event('beforeinstallprompt');
       beforeInstallPromptEvent.preventDefault = () => {};
       beforeInstallPromptEvent.prompt = async () => {
-        console.log('[TEST] Mock prompt() called');
+        console.log('[PWAInstaller] Native prompt triggered!');
         window.__pwaPromptCalled = true;
         return Promise.resolve();
       };
@@ -191,19 +158,13 @@ test.describe('PWA Installation', () => {
 
     await page.waitForTimeout(500);
 
-    // Click install via menu
+    // Click install via menu - should trigger prompt directly
     await page.click('#settings-menu-btn');
     await page.waitForTimeout(300);
     await page.click('#menu-install-btn');
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
 
-    const modal = page.locator('#pwa-install-modal');
-    await expect(modal).not.toHaveClass(/hidden/);
-
-    await page.click('#pwa-install-action');
-    await page.waitForTimeout(1000);
-
-    // Verify prompt was called
+    // Verify prompt was called directly
     const promptCalled = await page.evaluate(() => window.__pwaPromptCalled);
     expect(promptCalled).toBe(true);
 
@@ -272,5 +233,373 @@ test.describe('PWA Installation', () => {
     const logs = await page.evaluate(() => window.__pwaLogs);
     const hasGuardLog = logs.some(log => log.includes('already in progress'));
     expect(hasGuardLog).toBe(true);
+  });
+});
+
+// Platform-specific tests for Android and iOS
+test.describe('PWA Installation - Platform-Specific Behavior', () => {
+
+  test.describe('iOS Safari', () => {
+    test('should show Safari Share instructions with visual guide and "Got It" button', async ({ page }) => {
+      // Set iOS user agent
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1'
+        });
+      });
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Click install button (FAB or menu) - should show modal since no native prompt on iOS
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+      await page.waitForTimeout(300);
+
+      // Verify modal is visible (iOS always shows modal since no native prompt)
+      const modal = page.locator('#pwa-install-modal');
+      await expect(modal).not.toHaveClass(/hidden/);
+
+      // Verify iOS-specific instructions are shown
+      const instructions = page.locator('.install-instructions.ios');
+      await expect(instructions).toBeVisible();
+      await expect(instructions).toContainText('Install on iOS/iPadOS');
+      await expect(instructions).toContainText('Share');
+      await expect(instructions).toContainText('Add to Home Screen');
+
+      // Verify visual guide is present
+      const visualGuide = page.locator('.ios-visual-guide');
+      await expect(visualGuide).toBeVisible();
+
+      // Verify step-by-step instructions
+      const steps = page.locator('.ios-step');
+      await expect(steps).toHaveCount(3);
+      await expect(steps.nth(0)).toContainText('Tap the Share button');
+      await expect(steps.nth(1)).toContainText('Scroll down in the menu');
+      await expect(steps.nth(2)).toContainText('Tap "Add" to confirm');
+
+      // Verify "Got It - Show Me Safari" button is visible (not hidden)
+      const installActionBtn = page.locator('#pwa-install-action');
+      await expect(installActionBtn).toBeVisible();
+      await expect(installActionBtn).not.toHaveClass(/hidden/);
+      await expect(installActionBtn).toContainText('Got It');
+
+      // Verify button has correct data-action attribute
+      const dataAction = await installActionBtn.getAttribute('data-action');
+      expect(dataAction).toBe('close');
+
+      // Click "Got It" button and verify modal closes
+      await installActionBtn.click();
+      await page.waitForTimeout(300);
+      await expect(modal).toHaveClass(/hidden/);
+    });
+  });
+
+  test.describe('Android Chrome - With Prompt Available', () => {
+    test('should trigger native prompt immediately without showing modal', async ({ page }) => {
+      // Set Android user agent
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
+        });
+      });
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Mock beforeinstallprompt event
+      await page.evaluate(() => {
+        window.__pwaPromptCalled = false;
+        window.__pwaLogs = [];
+
+        const originalLog = console.log;
+        console.log = function(...args) {
+          const message = args.join(' ');
+          if (message.includes('[PWAInstaller]')) {
+            window.__pwaLogs.push(message);
+          }
+          originalLog.apply(console, args);
+        };
+
+        const beforeInstallPromptEvent = new Event('beforeinstallprompt');
+        beforeInstallPromptEvent.preventDefault = () => {};
+        beforeInstallPromptEvent.prompt = async () => {
+          console.log('[PWAInstaller] Native prompt triggered!');
+          window.__pwaPromptCalled = true;
+          // Simulate slight delay like real browser
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return Promise.resolve();
+        };
+        beforeInstallPromptEvent.userChoice = Promise.resolve({ outcome: 'accepted' });
+        window.dispatchEvent(beforeInstallPromptEvent);
+      });
+
+      await page.waitForTimeout(500);
+
+      // Click install button (FAB or menu)
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+
+      // Wait for prompt to be triggered
+      await page.waitForTimeout(500);
+
+      // Verify native prompt was called DIRECTLY (without modal showing first)
+      const promptCalled = await page.evaluate(() => window.__pwaPromptCalled);
+      expect(promptCalled).toBe(true);
+
+      // Verify the logs show direct triggering
+      const logs = await page.evaluate(() => window.__pwaLogs);
+      expect(logs.some(log => log.includes('Native prompt available, triggering directly'))).toBe(true);
+      expect(logs.some(log => log.includes('Showing browser install prompt'))).toBe(true);
+    });
+  });
+
+  test.describe('Android Chrome - Without Prompt (HTTP)', () => {
+    test('should show HTTPS required message when on HTTP', async ({ page }) => {
+      // Set Android user agent
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
+        });
+      });
+
+      // Note: This test assumes we're running on HTTP (default config)
+      // If TEST_HTTPS=true, this test will be skipped
+      const baseURL = process.env.TEST_HTTPS === 'true'
+        ? 'https://localhost:8443'
+        : 'http://localhost:8080';
+
+      if (process.env.TEST_HTTPS === 'true') {
+        test.skip();
+        return;
+      }
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Click install button
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+      await page.waitForTimeout(300);
+
+      // Verify modal is visible
+      const modal = page.locator('#pwa-install-modal');
+      await expect(modal).not.toHaveClass(/hidden/);
+
+      // Verify error state instructions
+      const instructions = page.locator('.install-instructions.android.error');
+      await expect(instructions).toBeVisible();
+      await expect(instructions).toContainText('Installation Not Available');
+      await expect(instructions).toContainText('HTTPS Required');
+
+      // Verify button is hidden
+      const installActionBtn = page.locator('#pwa-install-action');
+      await expect(installActionBtn).toHaveClass(/hidden/);
+    });
+  });
+
+  test.describe('Android Chrome - Without Prompt (No Service Worker)', () => {
+    test('should show loading message when service worker not registered', async ({ page }) => {
+      // Skip if not on HTTPS (HTTP will show HTTPS error instead)
+      if (process.env.TEST_HTTPS !== 'true') {
+        test.skip();
+        return;
+      }
+
+      // Set Android user agent
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
+        });
+
+        // Mock service worker as not registered
+        Object.defineProperty(navigator.serviceWorker, 'controller', {
+          get: () => null,
+          configurable: true
+        });
+      });
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Click install button
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+      await page.waitForTimeout(300);
+
+      // Verify modal is visible
+      const modal = page.locator('#pwa-install-modal');
+      await expect(modal).not.toHaveClass(/hidden/);
+
+      // Verify loading state instructions
+      const instructions = page.locator('.install-instructions.android.error');
+      await expect(instructions).toBeVisible();
+      await expect(instructions).toContainText('Installation Loading');
+
+      // Verify "Try Again" button is visible
+      const installActionBtn = page.locator('#pwa-install-action');
+      await expect(installActionBtn).toBeVisible();
+      await expect(installActionBtn).toContainText('Try Again');
+
+      // Verify button has correct data-action attribute
+      const dataAction = await installActionBtn.getAttribute('data-action');
+      expect(dataAction).toBe('close');
+
+      // Click "Try Again" and verify modal closes
+      await installActionBtn.click();
+      await page.waitForTimeout(300);
+      await expect(modal).toHaveClass(/hidden/);
+    });
+  });
+
+  test.describe('Android Chrome - Without Prompt (Browser Not Supported)', () => {
+    test('should show browser not supported message', async ({ page }) => {
+      // Skip if not on HTTPS
+      if (process.env.TEST_HTTPS !== 'true') {
+        test.skip();
+        return;
+      }
+
+      // Set Android user agent and remove beforeinstallprompt support
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
+        });
+
+        // Remove beforeinstallprompt support by making the property always undefined
+        Object.defineProperty(window, 'onbeforeinstallprompt', {
+          get: () => undefined,
+          set: () => {},
+          configurable: false
+        });
+      });
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Click install button
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+      await page.waitForTimeout(300);
+
+      // Verify modal is visible
+      const modal = page.locator('#pwa-install-modal');
+      await expect(modal).not.toHaveClass(/hidden/);
+
+      // Verify error state instructions
+      const instructions = page.locator('.install-instructions.android.error');
+      await expect(instructions).toBeVisible();
+      await expect(instructions).toContainText('Browser Not Supported');
+      await expect(instructions).toContainText('Google Chrome');
+      await expect(instructions).toContainText('Microsoft Edge');
+
+      // Verify button is hidden
+      const installActionBtn = page.locator('#pwa-install-action');
+      await expect(installActionBtn).toHaveClass(/hidden/);
+    });
+  });
+
+  test.describe('Android Chrome - Without Prompt (Engagement Required)', () => {
+    test('should show engagement tip when prompt support exists but hasnt fired', async ({ page }) => {
+      // Skip if not on HTTPS (will show HTTPS error instead)
+      if (process.env.TEST_HTTPS !== 'true') {
+        test.skip();
+        return;
+      }
+
+      // Set Android user agent and ensure beforeinstallprompt support exists
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+          get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
+        });
+
+        // Ensure beforeinstallprompt is supported (property exists)
+        if (!('onbeforeinstallprompt' in window)) {
+          window.onbeforeinstallprompt = null;
+        }
+
+        // Mock service worker as registered
+        Object.defineProperty(navigator.serviceWorker, 'controller', {
+          get: () => ({ state: 'activated' }),
+          configurable: true
+        });
+      });
+
+      await page.goto('/');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(1000);
+
+      // Don't trigger beforeinstallprompt event (simulating engagement requirement not met)
+
+      // Click install button
+      const fabBtn = page.locator('#install-btn');
+      if (await fabBtn.isVisible()) {
+        await fabBtn.click();
+      } else {
+        await page.click('#settings-menu-btn');
+        await page.waitForTimeout(300);
+        await page.click('#menu-install-btn');
+      }
+      await page.waitForTimeout(300);
+
+      // Verify modal is visible
+      const modal = page.locator('#pwa-install-modal');
+      await expect(modal).not.toHaveClass(/hidden/);
+
+      // Verify engagement tip instructions
+      const instructions = page.locator('.install-instructions.android');
+      await expect(instructions).toBeVisible();
+      await expect(instructions).toContainText('Installation Available Soon');
+      await expect(instructions).toContainText('requires some interaction first');
+
+      // Verify "Got It" button is visible
+      const installActionBtn = page.locator('#pwa-install-action');
+      await expect(installActionBtn).toBeVisible();
+      await expect(installActionBtn).toContainText('Got It');
+
+      // Verify button has correct data-action attribute
+      const dataAction = await installActionBtn.getAttribute('data-action');
+      expect(dataAction).toBe('close');
+
+      // Click "Got It" and verify modal closes
+      await installActionBtn.click();
+      await page.waitForTimeout(300);
+      await expect(modal).toHaveClass(/hidden/);
+    });
   });
 });

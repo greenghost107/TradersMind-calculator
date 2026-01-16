@@ -11,7 +11,8 @@
       "Bash(npx playwright install chromium)",
       "Bash(if not exist tests mkdir tests)",
       "Bash(npm test:*)",
-      "Bash(file:*)"
+      "Bash(file:*)",
+      "Bash(set TEST_HTTPS=true:*)"
     ],
     "deny": []
   }
