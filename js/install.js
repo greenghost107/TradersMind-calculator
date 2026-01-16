@@ -342,6 +342,23 @@ class PWAInstaller {
         }
     }
 
+    async isServiceWorkerReady() {
+        if (!('serviceWorker' in navigator)) {
+            console.log('[PWAInstaller] Service workers not supported');
+            return false;
+        }
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const isReady = registration.active !== null;
+            console.log('[PWAInstaller] Service worker ready:', isReady);
+            return isReady;
+        } catch (error) {
+            console.error('[PWAInstaller] Error checking service worker:', error);
+            return false;
+        }
+    }
+
     handleServiceWorkerUpdate(registration) {
         const newWorker = registration.installing;
         
@@ -823,7 +840,15 @@ class PWAInstaller {
         this.updateInstallButtonVisibility();
     }
 
-    updateInstallButtonVisibility() {
+    async updateInstallButtonVisibility() {
+        // Check if service worker is ready (required for Android)
+        const isIOS = this.detectPlatform() === 'iOS';
+        const swReady = await this.isServiceWorkerReady();
+        if (!swReady && !isIOS) {
+            console.log('[PWAInstaller] Service worker not ready yet, waiting...');
+            return;
+        }
+
         // Always show install UI, but adapt behavior by platform/state
         const isStandalone = this.isStandalone();
         const hasPromptSupport = this.deferredPrompt !== null;

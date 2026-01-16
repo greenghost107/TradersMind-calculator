@@ -270,7 +270,7 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       // Verify iOS-specific instructions are shown
       const instructions = page.locator('.install-instructions.ios');
       await expect(instructions).toBeVisible();
-      await expect(instructions).toContainText('Install on iOS/iPadOS');
+      await expect(instructions).toContainText('Install on iPhone/iPad');
       await expect(instructions).toContainText('Share');
       await expect(instructions).toContainText('Add to Home Screen');
 
@@ -279,26 +279,56 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       await expect(visualGuide).toBeVisible();
 
       // Verify step-by-step instructions
-      const steps = page.locator('.ios-step');
+      const steps = page.locator('.step-container');
       await expect(steps).toHaveCount(3);
       await expect(steps.nth(0)).toContainText('Tap the Share button');
-      await expect(steps.nth(1)).toContainText('Scroll down in the menu');
+      await expect(steps.nth(1)).toContainText('Scroll down');
       await expect(steps.nth(2)).toContainText('Tap "Add" to confirm');
 
-      // Verify "Got It - Show Me Safari" button is visible (not hidden)
+      // Verify "Add to Home Screen" button is visible (not hidden)
       const installActionBtn = page.locator('#pwa-install-action');
       await expect(installActionBtn).toBeVisible();
       await expect(installActionBtn).not.toHaveClass(/hidden/);
-      await expect(installActionBtn).toContainText('Got It');
+      await expect(installActionBtn).toContainText('Add to Home Screen');
 
       // Verify button has correct data-action attribute
       const dataAction = await installActionBtn.getAttribute('data-action');
-      expect(dataAction).toBe('close');
+      expect(dataAction).toBe('ios-share');
 
-      // Click "Got It" button and verify modal closes
-      await installActionBtn.click();
-      await page.waitForTimeout(300);
-      await expect(modal).toHaveClass(/hidden/);
+      // Note: We don't test clicking the button since Web Share API
+      // behavior is unpredictable in test environments
+      console.log('[Test] iOS PWA modal structure and content verified');
+    });
+
+    test('iOS: Verify required PWA meta tags are present', async ({ page }) => {
+      await page.goto('/');
+
+      // Check apple-mobile-web-app-capable
+      const appCapable = await page.$eval(
+        'meta[name="apple-mobile-web-app-capable"]',
+        el => el.content
+      );
+      expect(appCapable).toBe('yes');
+
+      // Check status bar style
+      const statusBar = await page.$eval(
+        'meta[name="apple-mobile-web-app-status-bar-style"]',
+        el => el.content
+      );
+      expect(statusBar).toBeTruthy();
+
+      // Check app title
+      const appTitle = await page.$eval(
+        'meta[name="apple-mobile-web-app-title"]',
+        el => el.content
+      );
+      expect(appTitle).toBe('TradersMind');
+
+      // Check apple touch icon
+      const touchIcon = await page.$('link[rel="apple-touch-icon"]');
+      expect(touchIcon).toBeTruthy();
+
+      console.log('[Test] All iOS PWA meta tags verified');
     });
   });
 
@@ -600,6 +630,84 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       await installActionBtn.click();
       await page.waitForTimeout(300);
       await expect(modal).toHaveClass(/hidden/);
+    });
+
+    test('Android: Verify manifest icon configuration', async ({ page }) => {
+      await page.goto('/');
+
+      // Fetch and parse manifest
+      const manifestResponse = await page.request.get('/manifest.json');
+      const manifest = await manifestResponse.json();
+
+      // Verify icons array structure
+      expect(manifest.icons).toBeDefined();
+      expect(manifest.icons.length).toBeGreaterThanOrEqual(4);
+
+      // Check for separate 'any' and 'maskable' entries
+      const anyIcons = manifest.icons.filter(icon => icon.purpose === 'any');
+      const maskableIcons = manifest.icons.filter(icon => icon.purpose === 'maskable');
+
+      expect(anyIcons.length).toBeGreaterThanOrEqual(2); // 192 and 512
+      expect(maskableIcons.length).toBeGreaterThanOrEqual(2); // 192 and 512
+
+      // Verify required sizes
+      const sizes = manifest.icons.map(icon => icon.sizes);
+      expect(sizes).toContain('192x192');
+      expect(sizes).toContain('512x512');
+
+      console.log('[Test] Manifest icon configuration verified');
+    });
+
+    test('Android: Verify service worker activates before install UI', async ({ page }) => {
+      await page.goto('/');
+
+      // Wait for service worker to register and activate
+      await page.waitForFunction(() => {
+        return navigator.serviceWorker.controller !== null;
+      }, { timeout: 5000 });
+
+      // Check service worker state
+      const swState = await page.evaluate(async () => {
+        const registration = await navigator.serviceWorker.getRegistration();
+        return {
+          hasRegistration: !!registration,
+          hasController: !!navigator.serviceWorker.controller,
+          state: registration?.active?.state
+        };
+      });
+
+      expect(swState.hasRegistration).toBe(true);
+      expect(swState.hasController).toBe(true);
+      expect(swState.state).toBe('activated');
+
+      console.log('[Test] Service worker activated successfully');
+    });
+
+    test('Cross-platform: Verify PWA installation readiness', async ({ page }) => {
+      await page.goto('/');
+
+      const pwaReadiness = await page.evaluate(() => {
+        const checks = {
+          hasManifest: !!document.querySelector('link[rel="manifest"]'),
+          hasServiceWorker: 'serviceWorker' in navigator,
+          hasAppleTouchIcon: !!document.querySelector('link[rel="apple-touch-icon"]'),
+          hasAppleWebAppCapable: !!document.querySelector('meta[name="apple-mobile-web-app-capable"]'),
+          isHTTPS: window.location.protocol === 'https:' || window.location.hostname === 'localhost',
+          hasThemeColor: !!document.querySelector('meta[name="theme-color"]')
+        };
+
+        return checks;
+      });
+
+      // All these should be true for PWA to work on real devices
+      expect(pwaReadiness.hasManifest).toBe(true);
+      expect(pwaReadiness.hasServiceWorker).toBe(true);
+      expect(pwaReadiness.hasAppleTouchIcon).toBe(true);
+      expect(pwaReadiness.hasAppleWebAppCapable).toBe(true);
+      expect(pwaReadiness.isHTTPS).toBe(true);
+      expect(pwaReadiness.hasThemeColor).toBe(true);
+
+      console.log('[Test] PWA installation readiness verified for real devices');
     });
   });
 });
