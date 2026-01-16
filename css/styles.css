@@ -463,6 +463,11 @@ select {
     padding-right: 2.5rem;
 }
 
+/* Shares to Buy Card - Wider Width */
+.shares-to-buy-card {
+    grid-column: span 2;
+}
+
 /* Results Section */
 .results-section {
     margin-bottom: 2rem;
@@ -652,25 +657,29 @@ footer {
     main {
         padding: 0.75rem;
     }
-    
+
     .input-section, .account-section, .result-section {
         padding: 1rem;
         margin-bottom: 1rem;
     }
-    
+
     .result-group {
         grid-template-columns: 1fr;
         gap: 0.75rem;
     }
-    
+
+    .shares-to-buy-card {
+        grid-column: span 1;
+    }
+
     .result-card {
         padding: 0.75rem;
     }
-    
+
     header h1 {
         font-size: 1.125rem;
     }
-    
+
     .install-fab {
         width: 48px;
         height: 48px;
@@ -684,11 +693,15 @@ footer {
         padding: 2rem;
         max-width: 800px;
     }
-    
+
     .result-group {
         grid-template-columns: repeat(3, 1fr);
     }
-    
+
+    .shares-to-buy-card {
+        grid-column: span 3;
+    }
+
     header h1 {
         font-size: 1.5rem;
     }

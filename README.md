@@ -1,21 +1,20 @@
 # TradersMind Calculator
 
-A comprehensive trading position size calculator designed to help traders manage risk and optimize their trading positions. This Progressive Web App (PWA) provides real-time calculations for position sizing, risk management, and profit targets.
+A comprehensive trading position size calculator designed to help traders manage risk and optimize their trading positions. This Progressive Web App (PWA) provides real-time calculations for position sizing, risk management, and ATR-adjusted positioning.
 
 ## ✨ Features
 
 ### Core Functionality
 - **Position Size Calculation**: Determines optimal number of shares based on account size and risk parameters
-- **Risk Analysis**: Calculates dollar risk amounts and risk percentages
-- **Profit Targets**: Automatically calculates target prices using 1:5 risk-to-reward ratio
+- **Risk Analysis**: Calculates dollar risk amounts and risk percentages using a configurable risk slider (0.1% - 1.5%)
+- **MIN Position Sizing**: Uses the smaller of risk-based sizing and diversification limits for safety
 - **ATR-Adjusted Positioning**: Advanced position sizing using Average True Range (ATR) for volatility adjustment
 - **Portfolio Diversification**: Manages position sizes across multiple trades
 
 ### Trading Intelligence
-- **Setup Quality Assessment**: Adjusts recommendations based on trade setup quality (Excellent, Good, Average, Poor)
-- **Market Condition Analysis**: Factors in market conditions (Bullish, Neutral, Bearish, Volatile)
-- **Risk Validation**: Validates stop-loss ranges (optimal: 4-5%)
+- **Dual Calculation Methods**: Shows both risk-based and max position calculations
 - **Position Sizing Formula**: Displays the mathematical formula used for calculations
+- **Volatility Impact Analysis**: Shows how ATR affects your position size
 
 ### User Experience
 - **Progressive Web App**: Install on mobile devices for offline access
@@ -38,16 +37,22 @@ A comprehensive trading position size calculator designed to help traders manage
 
 3. **Review Risk Calculation**:
    - Portfolio Risk (% and $)
+   - Position percentage of account
+   - Trade Risk % (distance between entry and stop loss)
+   - Risk per share
+   - Total position value
    - Shares to buy based on risk parameters
-   - Total position value and position percentage of account
 
 4. **Review Total Max Position**:
    - Maximum shares based on diversification limits
-   - Position sizing formula breakdown
 
 5. **Fine-tune with ATR** (Optional):
    - **ATR (%)**: Enter the stock's Average True Range percentage
    - Review volatility-adjusted position recommendations
+
+6. **Position Sizing Formula Reference**:
+   - View the mathematical formula used for calculations at the bottom of the page
+   - Formula is informational and shows the MIN-based risk calculation approach
 
 ### Installation (PWA)
 
@@ -78,10 +83,11 @@ The calculator uses a MIN function to determine position size based on the small
 ### Risk Calculation Results
 - **Portfolio Risk (%)**: Your selected risk percentage from the slider
 - **Portfolio Risk ($)**: Account Size × Risk %
-- **Shares to Buy**: Calculated using the MIN formula above
-- **Total Position Value**: Shares × Entry Price
 - **Position % of Account**: (Position Value ÷ Account Size) × 100
+- **Trade Risk %**: Percentage distance between entry and stop loss: |(Entry Price - Stop Loss) ÷ Entry Price| × 100
 - **Risk per Share**: |Entry Price - Stop Loss|
+- **Total Position Value**: Shares × Entry Price
+- **Shares to Buy**: Calculated using the MIN formula above
 
 ### Total Max Position
 - **Shares to Buy**: Maximum shares based on account ÷ max positions
@@ -98,42 +104,26 @@ The calculator adjusts position sizes based on volatility:
 
 **Formula**: `ATR Shares = Standard Shares × ATR Multiplier`
 
-### Setup Quality & Market Conditions
-
-The calculator considers trade quality and market environment:
-
-**Setup Quality Multipliers**:
-- Excellent: 1.0x
-- Good: 0.8x
-- Average: 0.6x
-- Poor: 0.4x
-
-**Market Condition Multipliers**:
-- Bullish: 1.0x
-- Neutral: 0.8x
-- Bearish: 0.6x
-- Volatile: 0.5x
-
 ## 🎯 Best Practices
 
 ### Risk Management
-- Keep individual position risk between 1-2% of account
-- Maintain stop-loss ranges between 4-5% for optimal risk/reward
+- Use the risk slider to keep individual position risk between 0.5-1.5% of account
+- Set appropriate stop-loss levels before entering trades
 - Limit total positions to maintain proper diversification
 - Use ATR adjustments for volatile stocks
 
 ### Position Sizing Strategy
-- Start with standard position calculations
+- Start with the Risk Calculation section for your primary position sizing
+- Review the Total Max Position to understand diversification limits
 - Apply ATR adjustments for high-volatility stocks
-- Consider reducing position sizes in poor market conditions
-- Scale position sizes based on setup quality
+- The calculator uses the MIN of both methods for safety
 
 ### Using the Calculator Effectively
-1. Always validate that your stop-loss is in the optimal 4-5% range
-2. Check that your risk per trade doesn't exceed 2% of account
-3. Use ATR data to adjust for stock volatility
-4. Consider market conditions when sizing positions
-5. Save different scenarios by bookmarking or taking screenshots
+1. Enter your account size and desired number of positions first
+2. Input entry price and stop loss for your trade
+3. Adjust the risk slider based on your risk tolerance
+4. Check the Risk Calculation for shares to buy
+5. Use ATR data to adjust for stock volatility
 
 ## 📱 Technical Requirements
 
@@ -177,14 +167,14 @@ TradersMind Calculator/
 ## 🆘 Support & Usage Tips
 
 ### Common Issues
-- **Calculations not updating**: Check that all required fields (marked with *) are filled
+- **Calculations not updating**: Check that Account Size, Entry Price, and Stop Loss (marked with *) are filled
 - **Install button not showing**: Ensure you're using a PWA-compatible browser
-- **Negative position sizes**: Verify entry price and stop loss are different values
+- **Position showing as limited**: The calculator uses the MIN of risk-based and diversification limits
 
 ### Pro Tips
-- Bookmark different scenarios with varying ATR values
+- Your inputs are automatically saved for future sessions
 - Use the app offline during trading hours
-- Take screenshots of calculations for trade documentation
+- Adjust the risk slider to see how different risk levels affect position size
 - Regularly update your account size as your balance changes
 
 ---

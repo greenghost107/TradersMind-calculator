@@ -32,6 +32,7 @@ class TradersMindApp {
             riskPerShare: document.getElementById('risk-per-share'),
             portfolioRiskPercent: document.getElementById('portfolio-risk-percent'),
             portfolioRiskAmount: document.getElementById('portfolio-risk-amount'),
+            tradeRiskPercent: document.getElementById('trade-risk-percent'),
             riskSharesToBuy: document.getElementById('risk-shares-to-buy'),
             riskConstraintLabel: document.getElementById('risk-constraint-label'),
             riskTotalPositionValue: document.getElementById('risk-total-position-value'),
@@ -158,6 +159,7 @@ class TradersMindApp {
         // Risk Calculation section (risk-based calculation with MIN logic) - Now at top
         this.elements.portfolioRiskPercent.textContent = result.formatted.portfolioRiskPercent;
         this.elements.portfolioRiskAmount.textContent = result.formatted.portfolioRiskAmount;
+        this.elements.tradeRiskPercent.textContent = result.formatted.tradeRiskPercent;
         this.elements.riskSharesToBuy.textContent = result.formatted.riskShares;
         this.elements.riskTotalPositionValue.textContent = result.formatted.riskTotalPositionValue;
         this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
@@ -222,6 +224,7 @@ class TradersMindApp {
             this.elements.riskPerShare,
             this.elements.portfolioRiskPercent,
             this.elements.portfolioRiskAmount,
+            this.elements.tradeRiskPercent,
             this.elements.riskSharesToBuy,
             this.elements.riskTotalPositionValue,
             this.elements.riskPositionPercentage,

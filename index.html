@@ -75,6 +75,11 @@
             <div class="result-section">
                 <h3>💰 Risk Calculation</h3>
                 <div class="result-group">
+                    <div class="result-card shares-to-buy-card">
+                        <h4>Shares to Buy</h4>
+                        <div id="risk-shares-to-buy" class="result-value">-</div>
+                        <div id="risk-constraint-label" class="result-subtitle" style="display: none;">Limited by max positions</div>
+                    </div>
                     <div class="result-card">
                         <h4>Portfolio Risk (%)</h4>
                         <div id="portfolio-risk-percent" class="result-value">-</div>
@@ -84,21 +89,20 @@
                         <div id="portfolio-risk-amount" class="result-value">-</div>
                     </div>
                     <div class="result-card">
-                        <h4>Shares to Buy</h4>
-                        <div id="risk-shares-to-buy" class="result-value">-</div>
-                        <div id="risk-constraint-label" class="result-subtitle" style="display: none;">Limited by max positions</div>
-                    </div>
-                    <div class="result-card">
-                        <h4>Total Position Value</h4>
-                        <div id="risk-total-position-value" class="result-value">-</div>
-                    </div>
-                    <div class="result-card">
                         <h4>Position % of Account</h4>
                         <div id="risk-position-percentage" class="result-value">-</div>
                     </div>
                     <div class="result-card">
+                        <h4>Trade Risk %</h4>
+                        <div id="trade-risk-percent" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
                         <h4>Risk per Share</h4>
                         <div id="risk-risk-per-share" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Total Position Value</h4>
+                        <div id="risk-total-position-value" class="result-value">-</div>
                     </div>
                 </div>
             </div>
@@ -122,27 +126,6 @@
                     <div class="result-card">
                         <h4>Risk per Share</h4>
                         <div id="risk-per-share" class="result-value">-</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Position Sizing Formula -->
-            <div class="result-section">
-                <h3>📐 Position Sizing Formula</h3>
-                <div class="formula-display">
-                    <div id="position-sizing-formula" class="formula-text">Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]</div>
-                </div>
-                <div class="formula-explanation">
-                    <p><strong>MIN Risk-Based Position Sizing:</strong></p>
-                    <p>This formula calculates position size using the minimum of two methods: risk-based sizing and portfolio diversification limits. It ensures you don't risk more than your tolerance while maintaining portfolio diversification.</p>
-                    <p><strong>Method 1:</strong> (Portfolio × Risk%) / Stop% - Size based on risk tolerance</p>
-                    <p><strong>Method 2:</strong> Portfolio / Max Positions - Size based on diversification</p>
-                    <p>The system uses whichever method gives the smaller position size for safety.</p>
-                </div>
-                <div class="result-group">
-                    <div class="result-card">
-                        <h4>Formula Result</h4>
-                        <div id="formula-result" class="result-value">-</div>
                     </div>
                 </div>
             </div>
@@ -185,6 +168,27 @@
                 </div>
                 <div class="validation-display">
                     <div id="position-validation" class="validation-text">-</div>
+                </div>
+            </div>
+
+            <!-- Position Sizing Formula Reference -->
+            <div class="result-section">
+                <h3>📐 Position Sizing Formula Reference</h3>
+                <div class="formula-display">
+                    <div id="position-sizing-formula" class="formula-text">Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]</div>
+                </div>
+                <div class="formula-explanation">
+                    <p><strong>MIN Risk-Based Position Sizing:</strong></p>
+                    <p>This formula calculates position size using the minimum of two methods: risk-based sizing and portfolio diversification limits. It ensures you don't risk more than your tolerance while maintaining portfolio diversification.</p>
+                    <p><strong>Method 1:</strong> (Portfolio × Risk%) / Stop% - Size based on risk tolerance</p>
+                    <p><strong>Method 2:</strong> Portfolio / Max Positions - Size based on diversification</p>
+                    <p>The system uses whichever method gives the smaller position size for safety.</p>
+                </div>
+                <div class="result-group">
+                    <div class="result-card">
+                        <h4>Formula Result</h4>
+                        <div id="formula-result" class="result-value">-</div>
+                    </div>
                 </div>
             </div>
         </div>

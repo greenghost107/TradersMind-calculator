@@ -294,6 +294,7 @@ class PositionCalculator {
             maxPositionValue,
             maxPositionPercentage,
             stopRiskPercent,
+            tradeRiskPercent: stopRiskPercent, // Alias for clarity in UI
             targetPrice,
             expectedGainPercent,
             portfolioRisk,
@@ -321,6 +322,7 @@ class PositionCalculator {
                 maxPositionValue: this.formatCurrency(maxPositionValue),
                 maxPositionPercentage: `${maxPositionPercentage.toFixed(2)}%`,
                 stopRiskPercent: `${stopRiskPercent.toFixed(2)}%`,
+                tradeRiskPercent: `${stopRiskPercent.toFixed(2)}%`,
                 targetPrice: this.formatCurrency(targetPrice),
                 expectedGainPercent: `${expectedGainPercent.toFixed(2)}%`,
                 portfolioRiskPercent: `${portfolioRisk.riskPercent}%`,
