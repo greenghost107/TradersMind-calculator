@@ -159,7 +159,17 @@ class PWAInstaller {
         if (this.pwaInstallAction) {
             this.pwaInstallAction.addEventListener('click', async () => {
                 console.log('[PWAInstaller] Install action button clicked');
-                await this.showInstallPrompt();
+
+                const action = this.pwaInstallAction.getAttribute('data-action');
+
+                if (action === 'install') {
+                    // Has native prompt - trigger it
+                    await this.showInstallPrompt();
+                } else if (action === 'close') {
+                    // iOS or waiting for engagement - just close modal
+                    this.hideInstallModal();
+                }
+                // If action is 'hidden', this handler won't fire (button is hidden)
             });
         }
 
@@ -273,9 +283,14 @@ class PWAInstaller {
         const hasPrompt = !!this.deferredPrompt;
         const isHTTPS = window.location.protocol === 'https:';
 
-        let instructionHTML = '';
+        // Get diagnostics to understand WHY prompt isn't available
+        const diag = this.getInstallDiagnostics();
 
-        // Different instructions based on platform and conditions
+        let instructionHTML = '';
+        let buttonText = 'Add to Home Screen';
+        let buttonAction = 'install'; // 'install', 'close', or 'hidden'
+
+        // iOS: Safari Share menu flow (no native prompt API)
         if (isIOS) {
             instructionHTML = `
                 <div class="install-instructions ios">
@@ -288,7 +303,11 @@ class PWAInstaller {
                     <p class="note">💡 Note: This feature only works in Safari browser</p>
                 </div>
             `;
-        } else if (hasPrompt) {
+            buttonText = 'Got It';
+            buttonAction = 'close'; // Button will close modal
+        }
+        // Has native prompt support (Chrome/Edge with beforeinstallprompt)
+        else if (hasPrompt) {
             instructionHTML = `
                 <div class="install-instructions chrome">
                     <h3>Install This App</h3>
@@ -296,46 +315,107 @@ class PWAInstaller {
                     <p class="benefit">✓ Works offline &nbsp;|&nbsp; ✓ Fast access &nbsp;|&nbsp; ✓ App-like experience</p>
                 </div>
             `;
-        } else if (isAndroid) {
-            instructionHTML = `
-                <div class="install-instructions android">
-                    <h3>Install on Android</h3>
-                    <ol>
-                        <li>Tap the <strong>menu</strong> (⋮) in your browser</li>
-                        <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
-                        <li>Tap <strong>"Install"</strong> to confirm</li>
-                    </ol>
-                    ${!isHTTPS ? '<p class="warning">⚠️ Note: Installation requires HTTPS connection</p>' : ''}
-                </div>
-            `;
-        } else {
-            // Desktop or other browsers
-            instructionHTML = `
-                <div class="install-instructions desktop">
-                    <h3>Install This App</h3>
-                    ${!isHTTPS ?
-                        '<p class="warning">⚠️ <strong>HTTPS Required:</strong> This app must be accessed via HTTPS to enable installation.</p>'
-                        : ''}
-                    <p>To install this app:</p>
-                    <ol>
-                        <li>Look for an <strong>install icon</strong> (⊕) in your browser's address bar</li>
-                        <li>Or open your browser's <strong>menu</strong> and select "Install app"</li>
-                        <li>Follow the prompts to install</li>
-                    </ol>
-                    <p class="supported-browsers">Supported browsers: Chrome, Edge, Opera</p>
-                </div>
-            `;
+            buttonText = 'Install Now';
+            buttonAction = 'install'; // Button will trigger native prompt
+        }
+        // Android without prompt - check WHY
+        else if (isAndroid) {
+            // Diagnose why prompt isn't available
+            if (!isHTTPS) {
+                instructionHTML = `
+                    <div class="install-instructions android error">
+                        <h3>Installation Not Available</h3>
+                        <p class="warning">⚠️ <strong>HTTPS Required:</strong> This app must be accessed via HTTPS to enable installation.</p>
+                        <p>Please access this app through a secure HTTPS URL to install it.</p>
+                    </div>
+                `;
+                buttonAction = 'hidden';
+            } else if (!diag.serviceWorkerRegistered) {
+                instructionHTML = `
+                    <div class="install-instructions android error">
+                        <h3>Installation Loading...</h3>
+                        <p class="note">⏳ The app is still setting up. Please wait a moment and try again.</p>
+                        <p>If this message persists, try refreshing the page.</p>
+                    </div>
+                `;
+                buttonText = 'Try Again';
+                buttonAction = 'close'; // Close and let user retry
+            } else if (!diag.beforeInstallPromptSupport) {
+                instructionHTML = `
+                    <div class="install-instructions android error">
+                        <h3>Browser Not Supported</h3>
+                        <p class="warning">⚠️ Your current browser doesn't support app installation.</p>
+                        <p>To install this app, please open it in <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Samsung Internet</strong>.</p>
+                    </div>
+                `;
+                buttonAction = 'hidden';
+            } else {
+                // Prompt support exists but hasn't fired yet (engagement requirement)
+                instructionHTML = `
+                    <div class="install-instructions android">
+                        <h3>Installation Available Soon</h3>
+                        <p class="note">💡 Your browser supports app installation, but requires some interaction first.</p>
+                        <p>Try using the app for a moment (scroll, click buttons), then check back here!</p>
+                        <p>Or look for the install icon (⊕) in your browser's address bar.</p>
+                    </div>
+                `;
+                buttonText = 'Got It';
+                buttonAction = 'close';
+            }
+        }
+        // Desktop without prompt
+        else {
+            if (!isHTTPS) {
+                instructionHTML = `
+                    <div class="install-instructions desktop error">
+                        <h3>Installation Not Available</h3>
+                        <p class="warning">⚠️ <strong>HTTPS Required:</strong> This app must be accessed via HTTPS to enable installation.</p>
+                        <p>Please access this app through a secure HTTPS URL.</p>
+                    </div>
+                `;
+                buttonAction = 'hidden';
+            } else if (!diag.beforeInstallPromptSupport) {
+                instructionHTML = `
+                    <div class="install-instructions desktop">
+                        <h3>Manual Installation</h3>
+                        <p>Your browser doesn't support automatic installation prompts.</p>
+                        <p>To install this app:</p>
+                        <ol>
+                            <li>Look for an <strong>install icon</strong> (⊕) in your browser's address bar</li>
+                            <li>Or open your browser's <strong>menu</strong> and select "Install app"</li>
+                            <li>Follow the prompts to install</li>
+                        </ol>
+                        <p class="supported-browsers">Supported browsers: Chrome, Edge, Opera</p>
+                    </div>
+                `;
+                buttonText = 'Got It';
+                buttonAction = 'close';
+            } else {
+                // Engagement requirement not met
+                instructionHTML = `
+                    <div class="install-instructions desktop">
+                        <h3>Installation Available Soon</h3>
+                        <p class="note">💡 Your browser supports app installation, but requires some interaction first.</p>
+                        <p>Try using the app for a moment, then check your browser's address bar for an install icon (⊕).</p>
+                    </div>
+                `;
+                buttonText = 'Got It';
+                buttonAction = 'close';
+            }
         }
 
         this.pwaInstructions.innerHTML = instructionHTML;
 
-        // Hide/show the install action button based on prompt availability
+        // Handle install button visibility and action
         if (this.pwaInstallAction) {
-            if (hasPrompt) {
-                this.pwaInstallAction.classList.remove('hidden');
-                this.pwaInstallAction.textContent = 'Install Now';
-            } else {
+            if (buttonAction === 'hidden') {
                 this.pwaInstallAction.classList.add('hidden');
+            } else {
+                this.pwaInstallAction.classList.remove('hidden');
+                this.pwaInstallAction.textContent = buttonText;
+
+                // Store button action type for click handler
+                this.pwaInstallAction.setAttribute('data-action', buttonAction);
             }
         }
     }

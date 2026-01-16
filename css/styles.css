@@ -811,3 +811,27 @@ select:focus-visible {
     vertical-align: middle;
     margin: 0 2px;
 }
+
+/* Install Instructions - Error States */
+.install-instructions.error h3 {
+    color: #d32f2f;
+}
+
+/* Dark mode support for new messages */
+@media (prefers-color-scheme: dark) {
+    .install-instructions.error h3 {
+        color: #ff6b6b;
+    }
+
+    .install-instructions .warning {
+        background-color: #332200;
+        border-left-color: #ff9800;
+        color: #ffb74d;
+    }
+
+    .install-instructions .note {
+        background-color: #001f3f;
+        border-left-color: #2196f3;
+        color: #90caf9;
+    }
+}
