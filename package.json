@@ -1,0 +1,30 @@
+{
+  "name": "tradersmind-calculator",
+  "version": "1.0.0",
+  "description": "A comprehensive trading position size calculator designed to help traders manage risk and optimize their trading positions. This Progressive Web App (PWA) provides real-time calculations for position sizing, risk management, and ATR-adjusted positioning.",
+  "main": "playwright.config.js",
+  "directories": {
+    "test": "tests"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "http-server": "^14.1.1"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenghost107/TradersMind-calculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/greenghost107/TradersMind-calculator/issues"
+  },
+  "homepage": "https://github.com/greenghost107/TradersMind-calculator#readme"
+}

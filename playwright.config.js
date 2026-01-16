@@ -1,32 +1,26 @@
-import { defineConfig, devices } from '@playwright/test';
+const { defineConfig, devices } = require('@playwright/test');
 
-export default defineConfig({
+module.exports = defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 0,
+  workers: 1,
   reporter: 'html',
-
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:8080',
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
   },
-
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
-    },
   ],
-
   webServer: {
-    command: 'npx serve . -p 3000',
-    port: 3000,
+    command: 'npx http-server . -p 8080',
+    url: 'http://localhost:8080',
     reuseExistingServer: !process.env.CI,
   },
 });

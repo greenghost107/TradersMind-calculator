@@ -4,7 +4,8 @@ class PWAInstaller {
         this.installButton = null;
         this.isInstalled = false;
         this.isInstallable = false;
-        
+        this.isShowingPrompt = false;
+
         this.init();
     }
 
@@ -78,20 +79,25 @@ class PWAInstaller {
             e.preventDefault();
             this.deferredPrompt = e;
             this.isInstallable = true;
+            this.isShowingPrompt = false;
             this.updateInstallButtonVisibility();
         });
 
         window.addEventListener('appinstalled', () => {
             console.log('[PWAInstaller] App installed successfully');
             this.isInstalled = true;
+            this.isInstallable = false;
             this.deferredPrompt = null;
+            this.isShowingPrompt = false;
+            this.hideInstallModal();
             this.updateInstallButtonVisibility();
             this.trackInstallEvent();
         });
 
         if (this.installButton) {
             this.installButton.addEventListener('click', () => {
-                this.showInstallPrompt();
+                console.log('[PWAInstaller] FAB install button clicked');
+                this.showInstallModal();
             });
         }
 
@@ -108,11 +114,11 @@ class PWAInstaller {
             this.menuInstallBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[PWAInstaller] Install button clicked');
+                console.log('[PWAInstaller] Menu install button clicked');
+
                 this.closeSettingsMenu();
-                // Use setTimeout to ensure menu closes before showing modal
                 setTimeout(() => {
-                    this.showInstallPrompt();
+                    this.showInstallModal();
                 }, 100);
             });
         }
@@ -141,9 +147,9 @@ class PWAInstaller {
         }
 
         if (this.pwaInstallAction) {
-            this.pwaInstallAction.addEventListener('click', () => {
-                this.hideInstallModal();
-                this.showInstallPrompt();
+            this.pwaInstallAction.addEventListener('click', async () => {
+                console.log('[PWAInstaller] Install action button clicked');
+                await this.showInstallPrompt();
             });
         }
 
@@ -170,9 +176,19 @@ class PWAInstaller {
 
     async showInstallPrompt() {
         console.log('[PWAInstaller] showInstallPrompt called');
-        console.log('[PWAInstaller] deferredPrompt:', this.deferredPrompt);
-        console.log('[PWAInstaller] isInstallable:', this.isInstallable);
+        console.log('[PWAInstaller] Current state:', {
+            hasDeferredPrompt: !!this.deferredPrompt,
+            isInstallable: this.isInstallable,
+            isShowingPrompt: this.isShowingPrompt
+        });
 
+        // Guard: Prevent duplicate prompts
+        if (this.isShowingPrompt) {
+            console.log('[PWAInstaller] Install prompt already in progress');
+            return;
+        }
+
+        // Guard: Check if prompt is available
         if (!this.deferredPrompt) {
             console.log('[PWAInstaller] No install prompt available, showing manual instructions');
             this.showManualInstallInstructions();
@@ -180,23 +196,47 @@ class PWAInstaller {
         }
 
         try {
-            console.log('[PWAInstaller] Showing install prompt');
-            const { outcome } = await this.deferredPrompt.prompt();
-            
-            console.log(`[PWAInstaller] Install prompt outcome: ${outcome}`);
-            
+            this.isShowingPrompt = true;
+            console.log('[PWAInstaller] Showing browser install prompt...');
+
+            // Hide modal with small delay to preserve user gesture
+            if (this.pwaModal && !this.pwaModal.classList.contains('hidden')) {
+                this.hideInstallModal();
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+
+            // Show the browser's native install prompt
+            await this.deferredPrompt.prompt();
+            console.log('[PWAInstaller] Waiting for user choice...');
+
+            // Wait for user response
+            const { outcome } = await this.deferredPrompt.userChoice;
+            console.log(`[PWAInstaller] User choice: ${outcome}`);
+
             if (outcome === 'accepted') {
+                console.log('[PWAInstaller] User accepted the install prompt');
                 this.trackInstallAttempt('accepted');
             } else {
+                console.log('[PWAInstaller] User dismissed the install prompt');
                 this.trackInstallAttempt('dismissed');
             }
-            
+
+            // Clear prompt (can only be used once)
             this.deferredPrompt = null;
+            this.isInstallable = false;
             this.updateInstallButtonVisibility();
-            
+
         } catch (error) {
             console.error('[PWAInstaller] Install prompt failed:', error);
+            console.error('[PWAInstaller] Error details:', {
+                name: error.name,
+                message: error.message
+            });
             this.showManualInstallInstructions();
+
+        } finally {
+            this.isShowingPrompt = false;
+            console.log('[PWAInstaller] Install prompt flow completed');
         }
     }
 

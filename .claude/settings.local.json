@@ -5,7 +5,12 @@
       "Bash(curl:*)",
       "Bash(python3:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npx playwright install chromium)",
+      "Bash(if not exist tests mkdir tests)",
+      "Bash(npm test:*)"
     ],
     "deny": []
   }
