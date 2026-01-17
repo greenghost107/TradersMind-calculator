@@ -43,7 +43,47 @@
       "icons": [
         {
           "src": "icons/icon-192.png",
-          "sizes": "192x192"
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Risk Calculator",
+      "short_name": "Risk",
+      "description": "Calculate position risk and sizing",
+      "url": "./#risk-calculation",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "ATR Position Size",
+      "short_name": "ATR",
+      "description": "ATR-adjusted position sizing",
+      "url": "./#atr-adjusted",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Position Formula",
+      "short_name": "Formula",
+      "description": "View position sizing formulas",
+      "url": "./#formula-reference",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

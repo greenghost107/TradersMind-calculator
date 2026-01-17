@@ -1,20 +1,27 @@
+/**
+ * PWAInstaller - Presentation Layer for PWA Installation
+ *
+ * This class handles the UI/UX for PWA installation, delegating all state
+ * management and business logic to PWAInstallManager.
+ */
 class PWAInstaller {
     constructor() {
-        this.deferredPrompt = null;
-        this.installButton = null;
-        this.isInstalled = false;
-        this.isInstallable = false;
-        this.isShowingPrompt = false;
+        // Use the PWAInstallManager for all state management
+        this.manager = new PWAInstallManager();
 
-        // Engagement tracking
-        this.engagementScore = 0;
-        this.sessionStart = Date.now();
-        this.engagementEvents = {
-            calculationCompleted: 0,
-            inputChanged: 0,
-            menuOpened: 0,
-            settingsChanged: 0
-        };
+        // UI elements
+        this.installButton = null;
+        this.pwaModal = null;
+        this.pwaCloseBtn = null;
+        this.pwaInstallAction = null;
+        this.pwaLaterBtn = null;
+        this.pwaInstructions = null;
+        this.settingsMenuBtn = null;
+        this.settingsDropdown = null;
+        this.menuInstallBtn = null;
+        this.menuInstallText = null;
+
+        // Auto-prompt interval
         this.engagementCheckInterval = null;
         this.autoPromptInterval = null;
 
@@ -25,10 +32,16 @@ class PWAInstaller {
         this.bindElements();
         this.registerServiceWorker();
         this.attachEventListeners();
-        this.checkInstallationStatus();
         this.initEngagementTracking();
-        this.initBeforeInstallPromptRetry();
         this.initAutoPrompt();
+
+        // Subscribe to manager state changes
+        this.manager.onStateChange((state) => {
+            this.updateUI(state);
+        });
+
+        // Initial UI update
+        this.updateUI(this.manager.getState());
 
         // Listen for service worker messages
         if ('serviceWorker' in navigator) {
@@ -36,24 +49,9 @@ class PWAInstaller {
                 if (event.data.type === 'SW_INSTALLED') {
                     console.log('[PWAInstaller] Service worker signaled installation complete');
                     this.updateInstallButtonVisibility();
-
-                    // Re-check installability
-                    setTimeout(() => {
-                        this.checkInstallationStatus();
-                    }, 1000);
                 }
             });
         }
-
-        // Log diagnostics after a brief delay to let everything initialize
-        setTimeout(() => {
-            const diagnostics = this.getInstallDiagnostics();
-            console.log('[PWAInstaller] Installation Diagnostics:', diagnostics);
-
-            if (diagnostics.blockers.length > 0) {
-                console.warn('[PWAInstaller] Installation blockers detected:', diagnostics.blockers);
-            }
-        }, 1000);
     }
 
     bindElements() {
@@ -71,155 +69,46 @@ class PWAInstaller {
         this.menuInstallText = document.getElementById('menu-install-text');
     }
 
-    // Engagement tracking methods
+    // Engagement tracking methods (delegated to manager)
     initEngagementTracking() {
         // Track calculation completion
         document.addEventListener('calculation-complete', () => {
-            this.trackEngagement('calculationCompleted');
+            this.manager.trackEngagement('calculationCompleted');
+            this.checkAutoInstallReadiness();
         });
 
         // Track input changes
         document.addEventListener('input', () => {
-            this.trackEngagement('inputChanged');
+            this.manager.trackEngagement('inputChanged');
+            this.checkAutoInstallReadiness();
         });
 
         // Track menu opens
         if (this.settingsMenuBtn) {
             this.settingsMenuBtn.addEventListener('click', () => {
-                this.trackEngagement('menuOpened');
+                this.manager.trackEngagement('menuOpened');
+                this.checkAutoInstallReadiness();
             });
         }
 
         console.log('[PWAInstaller] Engagement tracking initialized');
     }
 
-    trackEngagement(eventType) {
-        if (this.engagementEvents.hasOwnProperty(eventType)) {
-            this.engagementEvents[eventType]++;
-            this.calculateEngagementScore();
-            this.checkAutoInstallReadiness();
-        }
-    }
-
-    calculateEngagementScore() {
-        const timeOnPage = (Date.now() - this.sessionStart) / 1000; // seconds
-        const actions = Object.values(this.engagementEvents).reduce((a, b) => a + b, 0);
-
-        // Score formula: time weight + action weight
-        this.engagementScore = (timeOnPage * 0.5) + (actions * 5);
-
-        console.log('[PWAInstaller] Engagement score:', this.engagementScore.toFixed(1), {
-            timeOnPage: timeOnPage.toFixed(1) + 's',
-            actions: actions,
-            breakdown: this.engagementEvents
-        });
-    }
-
     checkAutoInstallReadiness() {
-        // Conditions for auto-showing install prompt
-        const isReady = this.engagementScore >= 30 && // 1 minute + 3 actions
-                        !this.isInstalled &&
-                        !this.isShowingPrompt &&
-                        this.shouldShowInstallPrompt(); // Check history
+        const state = this.manager.getState();
 
-        if (isReady && (this.deferredPrompt || this.detectPlatform() === 'iOS')) {
+        // Conditions for auto-showing install prompt
+        const isReady = state.engagementScore >= 30 && // 1 minute + 3 actions
+                        !state.isInstalled &&
+                        !state.isShowingPrompt &&
+                        this.manager.shouldShowInstallPrompt(); // Check history
+
+        if (isReady && (state.hasDeferredPrompt || state.platform === 'iOS')) {
             console.log('[PWAInstaller] Auto-triggering install prompt based on engagement');
             this.autoShowInstallPrompt();
         }
     }
 
-    // Installation state persistence
-    getInstallHistory() {
-        const history = localStorage.getItem('pwa_install_history');
-        return history ? JSON.parse(history) : [];
-    }
-
-    saveInstallState(outcome) {
-        const history = this.getInstallHistory();
-        history.push({
-            timestamp: Date.now(),
-            platform: this.detectPlatform(),
-            browser: this.detectBrowser(),
-            outcome: outcome, // 'shown', 'accepted', 'dismissed', 'error', 'auto_shown', 'share_menu_opened'
-            engagementScore: this.engagementScore
-        });
-
-        // Keep only last 10 entries
-        if (history.length > 10) {
-            history.shift();
-        }
-
-        localStorage.setItem('pwa_install_history', JSON.stringify(history));
-        console.log('[PWAInstaller] Install state saved:', outcome);
-    }
-
-    shouldShowInstallPrompt() {
-        const history = this.getInstallHistory();
-        const now = Date.now();
-        const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-
-        // Check if user dismissed recently
-        const recentDismiss = history.find(h =>
-            h.outcome === 'dismissed' &&
-            h.timestamp > sevenDaysAgo
-        );
-
-        if (recentDismiss) {
-            console.log('[PWAInstaller] User dismissed install within last 7 days, respecting choice');
-            return false;
-        }
-
-        // Check if already accepted
-        const accepted = history.find(h => h.outcome === 'accepted');
-        if (accepted) {
-            console.log('[PWAInstaller] User already accepted install');
-            return false;
-        }
-
-        return true;
-    }
-
-    // Retry logic for beforeinstallprompt
-    initBeforeInstallPromptRetry() {
-        let attemptCount = 0;
-        const maxAttempts = 10;
-        const baseDelay = 2000; // 2 seconds
-
-        const retryListener = () => {
-            if (this.deferredPrompt || attemptCount >= maxAttempts) {
-                return; // Stop if we got the prompt or exceeded attempts
-            }
-
-            attemptCount++;
-            const delay = Math.min(baseDelay * Math.pow(1.5, attemptCount), 30000); // Cap at 30s
-
-            console.log(`[PWAInstaller] Retry attempt ${attemptCount}/${maxAttempts} in ${delay}ms`);
-
-            setTimeout(() => {
-                // Re-check if prompt has fired
-                if (!this.deferredPrompt && this.engagementScore > 15) {
-                    // Re-register listener in case it was missed
-                    window.addEventListener('beforeinstallprompt', (e) => {
-                        console.log('[PWAInstaller] Before install prompt caught on retry');
-                        e.preventDefault();
-                        this.deferredPrompt = e;
-                        this.isInstallable = true;
-                        this.updateInstallButtonVisibility();
-
-                        // Auto-show if highly engaged
-                        if (this.engagementScore > 40) {
-                            this.showInstallPrompt();
-                        }
-                    }, { once: true });
-                }
-
-                retryListener(); // Next retry
-            }, delay);
-        };
-
-        // Start retry cycle after initial grace period
-        setTimeout(retryListener, 5000);
-    }
 
     // Smart auto-prompt system
     initAutoPrompt() {
@@ -233,24 +122,25 @@ class PWAInstaller {
     }
 
     shouldAutoShowPrompt() {
+        const state = this.manager.getState();
         return (
-            this.engagementScore >= 30 && // Engaged user
-            !this.isInstalled && // Not already installed
-            !this.isShowingPrompt && // Not currently showing
-            this.shouldShowInstallPrompt() && // Haven't dismissed recently
-            (this.deferredPrompt || this.detectPlatform() === 'iOS') // Prompt available or iOS
+            state.engagementScore >= 30 && // Engaged user
+            !state.isInstalled && // Not already installed
+            !state.isShowingPrompt && // Not currently showing
+            this.manager.shouldShowInstallPrompt() && // Haven't dismissed recently
+            (state.hasDeferredPrompt || state.platform === 'iOS') // Prompt available or iOS
         );
     }
 
     autoShowInstallPrompt() {
         console.log('[PWAInstaller] Auto-showing install prompt based on engagement');
 
-        const platform = this.detectPlatform();
+        const state = this.manager.getState();
 
-        if (platform === 'iOS') {
+        if (state.platform === 'iOS') {
             // iOS: Show modal with share button
             this.showInstallModal();
-        } else if (this.deferredPrompt) {
+        } else if (state.hasDeferredPrompt) {
             // Android/Desktop with prompt: Show native
             this.showInstallPrompt();
         } else {
@@ -258,51 +148,8 @@ class PWAInstaller {
             this.showInstallModal();
         }
 
-        this.saveInstallState('auto_shown');
+        this.manager.saveInstallState('auto_shown');
     }
-
-    // Web Share API for iOS (DEPRECATED - doesn't work for PWA installation)
-    // The Web Share API opens a share menu for sharing content with others (Messages, Mail, etc.)
-    // but does NOT provide access to "Add to Home Screen" functionality.
-    // Keeping this code commented for reference.
-    /*
-    async triggerIOSShareMenu() {
-        // Check if Web Share API is available (iOS Safari 13+)
-        if (!navigator.share) {
-            console.log('[PWAInstaller] Web Share API not available');
-            return false;
-        }
-
-        try {
-            await navigator.share({
-                title: 'TradersMind Calculator',
-                text: 'Add to Home Screen for instant access',
-                url: window.location.href
-            });
-
-            console.log('[PWAInstaller] Share menu triggered successfully');
-
-            // Track that we showed share dialog
-            this.saveInstallState('share_menu_opened');
-            this.trackInstallAttempt('share_menu_opened');
-            return true;
-
-        } catch (err) {
-            if (err.name === 'AbortError') {
-                console.log('[PWAInstaller] User cancelled share menu');
-            } else {
-                console.error('[PWAInstaller] Share failed:', err);
-            }
-            return false;
-        }
-    }
-
-    showIOSManualInstructions() {
-        // Fallback: Show detailed manual instructions
-        console.log('[PWAInstaller] Showing iOS manual instructions');
-        // The modal is already showing, just let it display the instructions
-    }
-    */
 
     // Notification permission request
     async requestNotificationPermission() {
@@ -314,7 +161,7 @@ class PWAInstaller {
                 if (permission === 'granted') {
                     console.log('[PWAInstaller] Notification permission granted');
                     // This counts as engagement with PWA features
-                    this.trackEngagement('settingsChanged');
+                    this.manager.trackEngagement('settingsChanged');
                 }
             } catch (err) {
                 console.log('[PWAInstaller] Notification permission request failed:', err);
@@ -394,24 +241,12 @@ class PWAInstaller {
     }
 
     attachEventListeners() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWAInstaller] Before install prompt triggered');
-            e.preventDefault();
-            this.deferredPrompt = e;
-            this.isInstallable = true;
-            this.isShowingPrompt = false;
-            this.updateInstallButtonVisibility();
-        });
+        // Note: beforeinstallprompt and appinstalled are handled by PWAInstallManager
+        // We just need to respond to those state changes via our state change listener
 
+        // Additional UI handling for appinstalled event
         window.addEventListener('appinstalled', () => {
-            console.log('[PWAInstaller] App installed successfully');
-            this.isInstalled = true;
-            this.isInstallable = false;
-            this.deferredPrompt = null;
-            this.isShowingPrompt = false;
             this.hideInstallModal();
-            this.updateInstallButtonVisibility();
-            this.trackInstallEvent();
         });
 
         if (this.installButton) {
@@ -520,90 +355,34 @@ class PWAInstaller {
             });
         }
 
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.checkInstallationStatus();
-            }
-        });
     }
 
     async showInstallPrompt() {
         console.log('[PWAInstaller] showInstallPrompt called');
-        console.log('[PWAInstaller] Current state:', {
-            hasDeferredPrompt: !!this.deferredPrompt,
-            isInstallable: this.isInstallable,
-            isShowingPrompt: this.isShowingPrompt
-        });
 
-        // Guard: Prevent duplicate prompts
-        if (this.isShowingPrompt) {
-            console.log('[PWAInstaller] Install prompt already in progress');
-            return;
+        // Hide modal if visible (with small delay to preserve user gesture)
+        if (this.pwaModal && !this.pwaModal.classList.contains('hidden')) {
+            this.hideInstallModal();
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
 
-        // Guard: Check if prompt is available
-        if (!this.deferredPrompt) {
-            console.log('[PWAInstaller] No install prompt available, showing manual instructions');
+        // Delegate to manager
+        const result = await this.manager.installApp();
+
+        if (!result.success) {
+            console.log('[PWAInstaller] Install prompt not available, showing manual instructions');
             this.showManualInstallInstructions();
-            return;
-        }
-
-        try {
-            this.isShowingPrompt = true;
-            console.log('[PWAInstaller] Showing browser install prompt...');
-
-            // Save that we're showing the prompt
-            this.saveInstallState('shown');
-
-            // Hide modal with small delay to preserve user gesture
-            if (this.pwaModal && !this.pwaModal.classList.contains('hidden')) {
-                this.hideInstallModal();
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-
-            // Show the browser's native install prompt
-            await this.deferredPrompt.prompt();
-            console.log('[PWAInstaller] Waiting for user choice...');
-
-            // Wait for user response
-            const { outcome } = await this.deferredPrompt.userChoice;
-            console.log(`[PWAInstaller] User choice: ${outcome}`);
-
-            if (outcome === 'accepted') {
-                console.log('[PWAInstaller] User accepted the install prompt');
-                this.saveInstallState('accepted');
-                this.trackInstallAttempt('accepted');
-            } else {
-                console.log('[PWAInstaller] User dismissed the install prompt');
-                this.saveInstallState('dismissed');
-                this.trackInstallAttempt('dismissed');
-            }
-
-            // Clear prompt (can only be used once)
-            this.deferredPrompt = null;
-            this.isInstallable = false;
-            this.updateInstallButtonVisibility();
-
-        } catch (error) {
-            console.error('[PWAInstaller] Install prompt failed:', error);
-            console.error('[PWAInstaller] Error details:', {
-                name: error.name,
-                message: error.message
-            });
-            this.showManualInstallInstructions();
-
-        } finally {
-            this.isShowingPrompt = false;
-            console.log('[PWAInstaller] Install prompt flow completed');
         }
     }
 
     async handleInstallButtonClick() {
         console.log('[PWAInstaller] handleInstallButtonClick called');
-        console.log('[PWAInstaller] deferredPrompt available:', !!this.deferredPrompt);
+
+        const state = this.manager.getState();
+        console.log('[PWAInstaller] deferredPrompt available:', state.hasDeferredPrompt);
 
         // If we have the native prompt available (Android Chrome), trigger it directly
-        if (this.deferredPrompt) {
+        if (state.hasDeferredPrompt) {
             console.log('[PWAInstaller] Native prompt available, triggering directly');
             await this.showInstallPrompt();
         } else {
@@ -641,13 +420,14 @@ class PWAInstaller {
     updateModalInstructions() {
         if (!this.pwaInstructions) return;
 
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        const isAndroid = this.isAndroidDevice();
-        const hasPrompt = !!this.deferredPrompt;
+        const state = this.manager.getState();
+        const isIOS = state.platform === 'iOS';
+        const isAndroid = state.platform === 'Android';
+        const hasPrompt = state.hasDeferredPrompt;
         const isHTTPS = window.location.protocol === 'https:';
 
         // Get diagnostics to understand WHY prompt isn't available
-        const diag = this.getInstallDiagnostics();
+        const diag = this.manager.getInstallDiagnostics();
 
         console.log('[PWAInstaller] Modal instructions:', { isIOS, isAndroid, hasPrompt, isHTTPS });
 
@@ -657,7 +437,7 @@ class PWAInstaller {
 
         // iOS: Safari Share menu flow (no native prompt API)
         if (isIOS) {
-            if (!this.isInIOSSafari()) {
+            if (!this.manager.isInIOSSafari()) {
                 // User is on iOS but not in Safari - Need to copy URL and switch browsers
                 instructionHTML = `
                     <div class="install-instructions ios error">
@@ -884,53 +664,27 @@ class PWAInstaller {
     markAsInstalled() {
         console.log('[PWAInstaller] User manually marked app as installed');
 
-        // Update installation state
-        this.isInstalled = true;
-        this.isInstallable = false;
-        this.deferredPrompt = null;
+        // Delegate to manager
+        this.manager.markAsInstalled();
 
-        // Save to install history
-        this.saveInstallState('manual_install');
-
-        // Track event
-        this.trackInstallEvent();
-
-        // Hide all install UI
-        this.updateInstallButtonVisibility();
-
-        console.log('[PWAInstaller] App marked as installed');
-    }
-
-    checkInstallationStatus() {
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            console.log('[PWAInstaller] App is running in standalone mode');
-            this.isInstalled = true;
-        } else if (window.navigator.standalone === true) {
-            console.log('[PWAInstaller] App is running in iOS standalone mode');
-            this.isInstalled = true;
-        } else {
-            this.isInstalled = false;
-        }
-        
+        // Update UI
         this.updateInstallButtonVisibility();
     }
 
     async updateInstallButtonVisibility() {
+        const state = this.manager.getState();
+
         // Check if service worker is ready (required for Android)
-        const isIOS = this.detectPlatform() === 'iOS';
+        const isIOS = state.platform === 'iOS';
         const swReady = await this.isServiceWorkerReady();
         if (!swReady && !isIOS) {
             console.log('[PWAInstaller] Service worker not ready yet, waiting...');
             return;
         }
 
-        // Always show install UI, but adapt behavior by platform/state
-        const isStandalone = this.isStandalone();
-        const hasPromptSupport = this.deferredPrompt !== null;
-
         // Update floating action button
         if (this.installButton) {
-            if (isStandalone) {
+            if (state.isStandalone) {
                 // Already installed
                 this.installButton.classList.add('hidden');
                 this.installButton.setAttribute('aria-hidden', 'true');
@@ -947,10 +701,9 @@ class PWAInstaller {
         }
 
         console.log(`[PWAInstaller] Install button state:`, {
-            isStandalone,
-            hasPromptSupport,
-            deferredPrompt: !!this.deferredPrompt,
-            visible: !isStandalone
+            isStandalone: state.isStandalone,
+            hasPromptSupport: state.hasDeferredPrompt,
+            visible: !state.isStandalone
         });
     }
 
@@ -985,20 +738,19 @@ class PWAInstaller {
     updateMenuInstallState() {
         if (!this.menuInstallBtn || !this.menuInstallText) return;
 
-        const isStandalone = this.isStandalone();
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const state = this.manager.getState();
 
-        if (isStandalone) {
+        if (state.isStandalone) {
             // Already installed
             this.menuInstallBtn.disabled = true;
             this.menuInstallBtn.classList.add('installed');
             this.menuInstallText.textContent = 'Already Installed';
-        } else if (isIOS) {
+        } else if (state.platform === 'iOS') {
             // iOS - show instructions
             this.menuInstallBtn.disabled = false;
             this.menuInstallBtn.classList.remove('installed');
             this.menuInstallText.textContent = 'Install App (iOS)';
-        } else if (this.deferredPrompt) {
+        } else if (state.hasDeferredPrompt) {
             // Has native prompt support
             this.menuInstallBtn.disabled = false;
             this.menuInstallBtn.classList.remove('installed');
@@ -1011,181 +763,18 @@ class PWAInstaller {
         }
     }
 
-    trackInstallEvent() {
-        console.log('[PWAInstaller] App installation completed');
-        
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'pwa_install', {
-                event_category: 'engagement',
-                event_label: 'successful_install'
-            });
-        }
+    /**
+     * Update UI based on manager state changes
+     * @param {Object} state - Current state from manager
+     */
+    updateUI(state) {
+        console.log('[PWAInstaller] Updating UI with state:', state);
+        this.updateInstallButtonVisibility();
     }
 
-    trackInstallAttempt(outcome) {
-        console.log(`[PWAInstaller] Install attempt: ${outcome}`);
-        
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'pwa_install_prompt', {
-                event_category: 'engagement',
-                event_label: outcome
-            });
-        }
-    }
-
-    isStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches || 
-               window.navigator.standalone === true;
-    }
-
-    canInstall() {
-        return this.isInstallable && !this.isInstalled;
-    }
-
+    // Delegate public methods to manager
     getInstallationStatus() {
-        return {
-            isInstalled: this.isInstalled,
-            isInstallable: this.isInstallable,
-            canInstall: this.canInstall(),
-            isStandalone: this.isStandalone(),
-            hasServiceWorker: 'serviceWorker' in navigator,
-            supportsManifest: 'manifest' in document.createElement('link')
-        };
-    }
-
-    getInstallDiagnostics() {
-        const diag = {
-            timestamp: new Date().toISOString(),
-            protocol: window.location.protocol,
-            isHTTPS: window.location.protocol === 'https:',
-            isLocalhost: window.location.hostname === 'localhost',
-            browser: this.detectBrowser(),
-            platform: this.detectPlatform(),
-            isStandalone: this.isStandalone(),
-            hasServiceWorker: 'serviceWorker' in navigator,
-            serviceWorkerRegistered: false,
-            manifestLinked: !!document.querySelector('link[rel="manifest"]'),
-            beforeInstallPromptSupport: 'onbeforeinstallprompt' in window,
-            beforeInstallPromptFired: !!this.deferredPrompt,
-            installationPossible: false,
-            blockers: []
-        };
-
-        // Check service worker registration
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-            diag.serviceWorkerRegistered = true;
-        }
-
-        // Determine if installation is possible
-        if (diag.isStandalone) {
-            diag.installationPossible = true;
-            diag.status = 'Already installed';
-        } else if (diag.platform === 'iOS') {
-            diag.installationPossible = true;
-            diag.status = 'Use Safari Share menu to install';
-        } else if (diag.beforeInstallPromptFired) {
-            diag.installationPossible = true;
-            diag.status = 'Ready to install via browser prompt';
-        } else {
-            diag.status = 'Installation not available';
-
-            // Identify blockers
-            if (!diag.isHTTPS && !diag.isLocalhost) {
-                diag.blockers.push('HTTPS required (currently using HTTP)');
-            }
-            if (!diag.serviceWorkerRegistered) {
-                diag.blockers.push('Service worker not registered');
-            }
-            if (!diag.manifestLinked) {
-                diag.blockers.push('Manifest not linked in HTML');
-            }
-            if (!diag.beforeInstallPromptSupport) {
-                diag.blockers.push('Browser does not support install prompts');
-            }
-        }
-
-        return diag;
-    }
-
-    detectBrowser() {
-        const ua = navigator.userAgent;
-        if (/Edg/.test(ua)) return 'Edge';
-        if (/Chrome/.test(ua) && !/Edg/.test(ua)) return 'Chrome';
-        if (/Safari/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
-        if (/Firefox/.test(ua)) return 'Firefox';
-        return 'Unknown';
-    }
-
-    isInSafari() {
-        return this.detectBrowser() === 'Safari';
-    }
-
-    isInIOSSafari() {
-        const ua = navigator.userAgent;
-        const isIOS = /iPad|iPhone|iPod/.test(ua);
-
-        if (!isIOS) return false;
-
-        // iOS Chrome has 'CriOS' in UA
-        if (/CriOS/.test(ua)) return false;
-
-        // iOS Firefox has 'FxiOS' in UA
-        if (/FxiOS/.test(ua)) return false;
-
-        // iOS Edge has 'EdgiOS' in UA
-        if (/EdgiOS/.test(ua)) return false;
-
-        // All other iOS browsers are Safari or WebView
-        return true;
-    }
-
-    detectPlatform() {
-        const ua = navigator.userAgent;
-        if (/iPad|iPhone|iPod/.test(ua)) return 'iOS';
-        if (this.isAndroidDevice()) return 'Android';
-        if (/Windows/.test(ua)) return 'Windows';
-        if (/Mac/.test(ua)) return 'macOS';
-        if (/Linux/.test(ua)) return 'Linux';
-        return 'Unknown';
-    }
-
-    isAndroidDevice() {
-        // Multi-layered Android detection with fallbacks
-        const ua = navigator.userAgent;
-
-        // Primary: User Agent string check
-        if (/Android/.test(ua)) {
-            console.log('[PWAInstaller] Android detected via user agent');
-            return true;
-        }
-
-        // Fallback 1: navigator.userAgentData (new API)
-        if (navigator.userAgentData && navigator.userAgentData.platform) {
-            const platform = navigator.userAgentData.platform.toLowerCase();
-            if (platform.includes('android')) {
-                console.log('[PWAInstaller] Android detected via userAgentData');
-                return true;
-            }
-        }
-
-        // Fallback 2: navigator.platform check
-        if (navigator.platform) {
-            const platform = navigator.platform.toLowerCase();
-            if (platform.includes('android') || platform.includes('linux arm')) {
-                console.log('[PWAInstaller] Android detected via navigator.platform');
-                return true;
-            }
-        }
-
-        // Fallback 3: Check for Android-specific properties
-        if ('ontouchstart' in window && /Linux/.test(ua) && !/X11/.test(ua)) {
-            // Touch-enabled Linux (not desktop) is likely Android
-            console.log('[PWAInstaller] Android detected via Linux + touch heuristic');
-            return true;
-        }
-
-        console.log('[PWAInstaller] Android not detected');
-        return false;
+        return this.manager.getInstallationStatus();
     }
 
     forceReload() {
