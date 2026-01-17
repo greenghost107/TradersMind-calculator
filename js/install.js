@@ -38,6 +38,11 @@ class PWAInstaller {
         // Subscribe to manager state changes
         this.manager.onStateChange((state) => {
             this.updateUI(state);
+
+            // If prompt becomes available while modal is open, update instructions
+            if (this.pwaModal && !this.pwaModal.classList.contains('hidden')) {
+                this.updateModalInstructions();
+            }
         });
 
         // Initial UI update
@@ -289,9 +294,14 @@ class PWAInstaller {
 
         // Close menu on Escape key
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isMenuOpen()) {
-                this.closeSettingsMenu();
-                this.settingsMenuBtn.focus();
+            if (e.key === 'Escape') {
+                if (this.isMenuOpen()) {
+                    this.closeSettingsMenu();
+                    this.settingsMenuBtn.focus();
+                } else if (this.pwaModal && !this.pwaModal.classList.contains('hidden')) {
+                    // Close modal if open
+                    this.hideInstallModal();
+                }
             }
         });
 
@@ -424,7 +434,7 @@ class PWAInstaller {
         const isIOS = state.platform === 'iOS';
         const isAndroid = state.platform === 'Android';
         const hasPrompt = state.hasDeferredPrompt;
-        const isHTTPS = window.location.protocol === 'https:';
+        const isHTTPS = window.__TEST_HTTPS__ || window.location.protocol === 'https:';
 
         // Get diagnostics to understand WHY prompt isn't available
         const diag = this.manager.getInstallDiagnostics();
@@ -563,24 +573,20 @@ class PWAInstaller {
                 `;
                 buttonAction = 'hidden';
             } else {
-                // Browser supports PWA, guide user to native install button
+                // Browser supports PWA, show manual install instructions immediately
                 instructionHTML = `
                     <div class="install-instructions android">
                         <h3>Install This App</h3>
+                        <p>To add TradersMind Calculator to your home screen:</p>
                         <div class="install-guide">
-                            <p>To install TradersMind Calculator:</p>
                             <ol class="install-steps">
                                 <li>
                                     <strong>Tap the menu button</strong> <span class="browser-icon">⋮</span>
-                                    <span class="location-hint">(top right corner of your browser)</span>
+                                    <span class="location-hint">(top right corner)</span>
                                 </li>
                                 <li>Look for <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong></li>
-                                <li>Tap <strong>"Install"</strong> to add the app to your home screen</li>
+                                <li>Tap <strong>"Install"</strong> to confirm</li>
                             </ol>
-                            <div class="visual-hint">
-                                <div class="arrow-indicator">↗</div>
-                                <p class="hint-text">Look for the menu button at the top of your screen</p>
-                            </div>
                         </div>
                     </div>
                 `;

@@ -4,6 +4,37 @@ test.describe('PWA Installation', () => {
   test.beforeEach(async ({ page, context }) => {
     // Grant permissions needed for PWA
     await context.grantPermissions(['notifications']);
+
+    // Set up test environment
+    await page.addInitScript(() => {
+      // Set test mode flags
+      window.__TEST_MODE__ = true;
+      window.__TEST_HTTPS__ = true;
+
+      // Ensure beforeinstallprompt support exists
+      if (!('onbeforeinstallprompt' in window)) {
+        window.onbeforeinstallprompt = null;
+      }
+
+      // Mock service worker as registered and ready
+      if ('serviceWorker' in navigator) {
+        Object.defineProperty(navigator.serviceWorker, 'controller', {
+          get: () => ({ state: 'activated' }),
+          configurable: true
+        });
+
+        Object.defineProperty(navigator.serviceWorker, 'ready', {
+          get: () => Promise.resolve({
+            active: { state: 'activated' },
+            installing: null,
+            waiting: null,
+            scope: '/',
+            updateViaCache: 'none'
+          }),
+          configurable: true
+        });
+      }
+    });
   });
 
   test('should trigger native prompt directly when beforeinstallprompt is available', async ({ page, context }) => {
@@ -26,7 +57,7 @@ test.describe('PWA Installation', () => {
       const originalLog = console.log;
       console.log = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[PWAInstaller]')) {
+        if (message.includes('[PWAInstaller]') || message.includes('[PWAInstallManager]')) {
           window.__pwaLogs.push(message);
         }
         originalLog.apply(console, args);
@@ -89,7 +120,7 @@ test.describe('PWA Installation', () => {
       const originalLog = console.log;
       console.log = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[PWAInstaller]')) {
+        if (message.includes('[PWAInstaller]') || message.includes('[PWAInstallManager]')) {
           window.__pwaLogs.push(message);
         }
         originalLog.apply(console, args);
@@ -138,7 +169,7 @@ test.describe('PWA Installation', () => {
       const originalLog = console.log;
       console.log = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[PWAInstaller]')) {
+        if (message.includes('[PWAInstaller]') || message.includes('[PWAInstallManager]')) {
           window.__pwaLogs.push(message);
         }
         originalLog.apply(console, args);
@@ -186,7 +217,7 @@ test.describe('PWA Installation', () => {
       const originalLog = console.log;
       console.log = function(...args) {
         const message = args.join(' ');
-        if (message.includes('[PWAInstaller]')) {
+        if (message.includes('[PWAInstaller]') || message.includes('[PWAInstallManager]')) {
           window.__pwaLogs.push(message);
         }
         originalLog.apply(console, args);
@@ -285,15 +316,15 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       await expect(steps.nth(1)).toContainText('Scroll down');
       await expect(steps.nth(2)).toContainText('Tap "Add" to confirm');
 
-      // Verify "Add to Home Screen" button is visible (not hidden)
+      // Verify "I've installed it" button is visible (not hidden)
       const installActionBtn = page.locator('#pwa-install-action');
       await expect(installActionBtn).toBeVisible();
       await expect(installActionBtn).not.toHaveClass(/hidden/);
-      await expect(installActionBtn).toContainText('Add to Home Screen');
+      await expect(installActionBtn).toContainText('I\'ve installed it');
 
       // Verify button has correct data-action attribute
       const dataAction = await installActionBtn.getAttribute('data-action');
-      expect(dataAction).toBe('ios-share');
+      expect(dataAction).toBe('mark-installed');
 
       // Note: We don't test clicking the button since Web Share API
       // behavior is unpredictable in test environments
@@ -353,7 +384,7 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
         const originalLog = console.log;
         console.log = function(...args) {
           const message = args.join(' ');
-          if (message.includes('[PWAInstaller]')) {
+          if (message.includes('[PWAInstaller]') || message.includes('[PWAInstallManager]')) {
             window.__pwaLogs.push(message);
           }
           originalLog.apply(console, args);
@@ -565,15 +596,13 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
   });
 
   test.describe('Android Chrome - Without Prompt (Engagement Required)', () => {
-    test('should show engagement tip when prompt support exists but hasnt fired', async ({ page }) => {
-      // Skip if not on HTTPS (will show HTTPS error instead)
-      if (process.env.TEST_HTTPS !== 'true') {
-        test.skip();
-        return;
-      }
-
+    test('should show manual install instructions when prompt support exists but hasnt fired', async ({ page }) => {
       // Set Android user agent and ensure beforeinstallprompt support exists
       await page.addInitScript(() => {
+        // Set test mode flags
+        window.__TEST_MODE__ = true;
+        window.__TEST_HTTPS__ = true;
+
         Object.defineProperty(navigator, 'userAgent', {
           get: () => 'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.210 Mobile Safari/537.36'
         });
@@ -583,9 +612,20 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
           window.onbeforeinstallprompt = null;
         }
 
-        // Mock service worker as registered
+        // Mock service worker as registered and ready
         Object.defineProperty(navigator.serviceWorker, 'controller', {
           get: () => ({ state: 'activated' }),
+          configurable: true
+        });
+
+        Object.defineProperty(navigator.serviceWorker, 'ready', {
+          get: () => Promise.resolve({
+            active: { state: 'activated' },
+            installing: null,
+            waiting: null,
+            scope: '/',
+            updateViaCache: 'none'
+          }),
           configurable: true
         });
       });
@@ -611,22 +651,23 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       const modal = page.locator('#pwa-install-modal');
       await expect(modal).not.toHaveClass(/hidden/);
 
-      // Verify engagement tip instructions
+      // Verify manual install instructions are shown
       const instructions = page.locator('.install-instructions.android');
       await expect(instructions).toBeVisible();
-      await expect(instructions).toContainText('Installation Available Soon');
-      await expect(instructions).toContainText('requires some interaction first');
+      await expect(instructions).toContainText('Install This App');
+      await expect(instructions).toContainText('Tap the menu button');
+      await expect(instructions).toContainText('⋮');
 
-      // Verify "Got It" button is visible
+      // Verify "I've installed it" button is visible
       const installActionBtn = page.locator('#pwa-install-action');
       await expect(installActionBtn).toBeVisible();
-      await expect(installActionBtn).toContainText('Got It');
+      await expect(installActionBtn).toContainText('I\'ve installed it');
 
       // Verify button has correct data-action attribute
       const dataAction = await installActionBtn.getAttribute('data-action');
-      expect(dataAction).toBe('close');
+      expect(dataAction).toBe('mark-installed');
 
-      // Click "Got It" and verify modal closes
+      // Click "I've installed it" and verify modal closes
       await installActionBtn.click();
       await page.waitForTimeout(300);
       await expect(modal).toHaveClass(/hidden/);
