@@ -478,6 +478,10 @@ class PWAInstaller {
                 } else if (action === 'close') {
                     // iOS or waiting for engagement - just close modal
                     this.hideInstallModal();
+                } else if (action === 'mark-installed') {
+                    // User confirms they've manually installed
+                    this.markAsInstalled();
+                    this.hideInstallModal();
                 } else if (action === 'copy-url') {
                     // iOS wrong browser - copy URL to clipboard
                     try {
@@ -731,8 +735,8 @@ class PWAInstaller {
                         </div>
                     </div>
                 `;
-                buttonText = 'Got It';
-                buttonAction = 'close'; // Just close the modal after user reads instructions
+                buttonText = '✓ I\'ve installed it';
+                buttonAction = 'mark-installed';
             }
         }
         // Has native prompt support (Chrome/Edge with beforeinstallprompt)
@@ -800,8 +804,8 @@ class PWAInstaller {
                         </div>
                     </div>
                 `;
-                buttonText = 'Got It';
-                buttonAction = 'close';
+                buttonText = '✓ I\'ve installed it';
+                buttonAction = 'mark-installed';
             }
         }
         // Desktop without prompt
@@ -840,8 +844,8 @@ class PWAInstaller {
                         <p>Try using the app for a moment, then check your browser's address bar for an install icon (⊕).</p>
                     </div>
                 `;
-                buttonText = 'Got It';
-                buttonAction = 'close';
+                buttonText = '✓ I\'ve installed it';
+                buttonAction = 'mark-installed';
             }
         }
 
@@ -859,10 +863,42 @@ class PWAInstaller {
                 this.pwaInstallAction.setAttribute('data-action', buttonAction);
             }
         }
+
+        // Update footer classes based on button action
+        const footer = this.pwaModal?.querySelector('.pwa-modal-footer');
+        if (footer) {
+            if (buttonAction === 'mark-installed') {
+                footer.classList.add('manual-flow');
+                this.pwaInstallAction.classList.add('mark-installed');
+            } else {
+                footer.classList.remove('manual-flow');
+                this.pwaInstallAction.classList.remove('mark-installed');
+            }
+        }
     }
 
     showManualInstallInstructions() {
         this.showInstallModal();
+    }
+
+    markAsInstalled() {
+        console.log('[PWAInstaller] User manually marked app as installed');
+
+        // Update installation state
+        this.isInstalled = true;
+        this.isInstallable = false;
+        this.deferredPrompt = null;
+
+        // Save to install history
+        this.saveInstallState('manual_install');
+
+        // Track event
+        this.trackInstallEvent();
+
+        // Hide all install UI
+        this.updateInstallButtonVisibility();
+
+        console.log('[PWAInstaller] App marked as installed');
     }
 
     checkInstallationStatus() {

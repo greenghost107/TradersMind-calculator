@@ -340,6 +340,25 @@ header h1 {
     color: #ffffff;
 }
 
+/* Mark as Installed Button (Success State) */
+.pwa-install-button.mark-installed {
+    background-color: #4caf50; /* Green */
+}
+
+.pwa-install-button.mark-installed:hover {
+    background-color: #388e3c; /* Darker green */
+}
+
+/* Manual installation flow layout */
+.pwa-modal-footer.manual-flow {
+    flex-direction: row;
+}
+
+.pwa-modal-footer.manual-flow .pwa-install-button {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
 /* Main Content */
 main {
     max-width: 480px;

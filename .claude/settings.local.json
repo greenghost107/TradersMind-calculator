@@ -12,7 +12,8 @@
       "Bash(if not exist tests mkdir tests)",
       "Bash(npm test:*)",
       "Bash(file:*)",
-      "Bash(set TEST_HTTPS=true:*)"
+      "Bash(set TEST_HTTPS=true:*)",
+      "Bash(dir \"C:\\\\Users\\\\michaelk\\\\personal workspace\\\\TradersMind calculator\\\\reference_resolved\" /s /b)"
     ],
     "deny": []
   }
