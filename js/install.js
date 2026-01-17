@@ -793,7 +793,24 @@ class PWAInstaller {
 
 document.addEventListener('DOMContentLoaded', () => {
     window.pwaInstaller = new PWAInstaller();
-    
+
     console.log('[PWAInstaller] PWA Installer initialized');
     console.log('[PWAInstaller] Installation status:', window.pwaInstaller.getInstallationStatus());
+
+    // Deployment diagnostics
+    console.log('[PWA] Deployment Info:', {
+        version: '3.0.0',
+        lastUpdated: '2026-01-17',
+        commit: 'Android install fix deployed',
+        serviceWorkerCache: 'v3'
+    });
+
+    // Platform detection diagnostics
+    console.log('[PWA] Platform Detection:', {
+        userAgent: navigator.userAgent,
+        platform: window.pwaInstaller.manager.getState().platform,
+        isAndroid: /Android/i.test(navigator.userAgent),
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isStandalone: window.matchMedia('(display-mode: standalone)').matches
+    });
 });

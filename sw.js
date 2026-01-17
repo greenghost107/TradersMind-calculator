@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tradersmind-calculator-v2';
-const STATIC_CACHE_NAME = 'tradersmind-static-v2';
+const CACHE_NAME = 'tradersmind-calculator-v3';
+const STATIC_CACHE_NAME = 'tradersmind-static-v3';
 
 const STATIC_ASSETS = [
   '/',
