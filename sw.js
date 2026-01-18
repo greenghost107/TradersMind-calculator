@@ -1,15 +1,17 @@
-const CACHE_NAME = 'tradersmind-calculator-v3';
-const STATIC_CACHE_NAME = 'tradersmind-static-v3';
+const CACHE_NAME = 'tradersmind-calculator-v4';
+const STATIC_CACHE_NAME = 'tradersmind-static-v4';
 
+// Use relative paths for GitHub Pages compatibility
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/styles.css',
-  '/js/app.js',
-  '/js/calculator.js',
-  '/js/storage.js',
-  '/js/install.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/styles.css',
+  './js/app.js',
+  './js/calculator.js',
+  './js/storage.js',
+  './js/pwaInstallManager.js',
+  './js/install.js',
+  './manifest.json'
 ];
 
 const CACHE_STRATEGIES = {
@@ -96,11 +98,22 @@ self.addEventListener('fetch', (event) => {
 function isStaticAsset(url) {
   const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
   const urlPath = new URL(url).pathname;
-  
-  return staticExtensions.some(ext => urlPath.endsWith(ext)) ||
-         STATIC_ASSETS.includes(urlPath) ||
-         urlPath === '/' ||
-         urlPath === '/index.html';
+
+  // Check file extensions
+  if (staticExtensions.some(ext => urlPath.endsWith(ext))) {
+    return true;
+  }
+
+  // Check if it's the root or index.html
+  // Works for both root deployment and subdirectory (GitHub Pages)
+  const basePath = new URL(self.registration.scope).pathname;
+  const normalizedPath = urlPath.replace(basePath, '/');
+
+  if (normalizedPath === '/' || normalizedPath === '/index.html' || urlPath === basePath || urlPath === basePath + 'index.html') {
+    return true;
+  }
+
+  return false;
 }
 
 async function handleStaticAsset(request) {
@@ -128,7 +141,8 @@ async function handleStaticAsset(request) {
     
     if (request.url.endsWith('.html') || request.url.endsWith('/')) {
       const cache = await caches.open(STATIC_CACHE_NAME);
-      const fallback = await cache.match('/index.html');
+      // Try to match index.html with relative path (works for GitHub Pages)
+      const fallback = await cache.match('./index.html') || await cache.match('./');
       if (fallback) {
         return fallback;
       }

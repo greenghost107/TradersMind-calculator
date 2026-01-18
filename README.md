@@ -139,7 +139,23 @@ The calculator adjusts position sizes based on volatility:
 - ✅ Registered service worker
 - ✅ User engagement (can't install on first page load)
 
-### Deploy to Vercel (Recommended)
+### Deploy to GitHub Pages
+
+**Already deployed!** The app is configured to work with GitHub Pages subdirectory deployment.
+
+**Your app URL**: `https://[username].github.io/[repository-name]/`
+
+The app uses relative paths for all assets, so it works correctly when deployed to a GitHub Pages subdirectory. Simply push your changes:
+
+```bash
+git add .
+git commit -m "Update app"
+git push origin main
+```
+
+Your existing GitHub Pages setup will automatically deploy the changes.
+
+### Deploy to Vercel
 ```bash
 # Install Vercel CLI
 npm i -g vercel

@@ -93,7 +93,7 @@
   "scope": "./",
   "prefer_related_applications": false,
   "share_target": {
-    "action": "/",
+    "action": "./",
     "method": "GET",
     "params": {
       "title": "title",
@@ -104,7 +104,7 @@
   "protocol_handlers": [
     {
       "protocol": "web+tradersmind",
-      "url": "/?protocol=%s"
+      "url": "./?protocol=%s"
     }
   ]
 }
