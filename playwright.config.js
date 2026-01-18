@@ -20,6 +20,39 @@ module.exports = defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'iOS Safari',
+      use: {
+        ...devices['iPhone 13'],
+        // iOS Safari supports service workers starting iOS 11.3+
+      },
+    },
+    {
+      name: 'iOS Safari iPad',
+      use: {
+        ...devices['iPad Pro'],
+      },
+    },
+    {
+      name: 'Android Chrome',
+      use: {
+        ...devices['Pixel 5'],
+        // Android Chrome supports beforeinstallprompt and PWA installation
+      },
+    },
+    {
+      name: 'Desktop Edge',
+      use: {
+        ...devices['Desktop Edge'],
+        channel: 'msedge',
+      },
+    },
+    {
+      name: 'Desktop Firefox',
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
   ],
   webServer: {
     command: process.env.TEST_HTTPS === 'true'
