@@ -4,6 +4,11 @@
  * This class handles the UI/UX for PWA installation, delegating all state
  * management and business logic to PWAInstallManager.
  */
+
+// Configuration constants for beforeinstallprompt timing
+const PROMPT_WAIT_TIMEOUT = 5000; // Wait up to 5 seconds for beforeinstallprompt
+const PROMPT_CHECK_INTERVAL = 100; // Check every 100ms
+
 class PWAInstaller {
     constructor() {
         // Use the PWAInstallManager for all state management
@@ -398,34 +403,43 @@ class PWAInstaller {
         const state = this.manager.getState();
         console.log('[PWAInstaller] deferredPrompt available:', state.hasDeferredPrompt);
 
-        // HAPPY PATH: Native prompt available - trigger it directly
+        // HAPPY PATH: Native prompt already available - trigger immediately
         if (state.hasDeferredPrompt) {
             console.log('[PWAInstaller] Triggering native install prompt directly');
             const result = await this.manager.installApp();
 
             if (result.success) {
                 console.log('[PWAInstaller] User accepted installation');
-                // App will install - UI will update via appinstalled event
             } else {
-                console.log('[PWAInstaller] User dismissed installation or error occurred');
+                console.log('[PWAInstaller] User dismissed or error');
             }
             return;
         }
 
-        // FALLBACK: No prompt available - wait briefly then show modal
-        console.log('[PWAInstaller] No prompt available, waiting briefly...');
+        // WAITING PATH: Show modal with loading state
+        console.log('[PWAInstaller] No prompt yet, showing waiting state...');
+        this.showInstallModal(true); // Skip updateModalInstructions
+        this.showWaitingForPromptState();
 
-        const gotPrompt = await this.waitForPrompt(1500);
+        // Wait LONGER for Chrome to fire beforeinstallprompt
+        const gotPrompt = await this.waitForPrompt(PROMPT_WAIT_TIMEOUT);
 
         if (gotPrompt) {
-            console.log('[PWAInstaller] Prompt became available, triggering');
-            await this.manager.installApp();
+            console.log('[PWAInstaller] Prompt became available during wait');
+            this.hideInstallModal();
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const result = await this.manager.installApp();
+            if (!result.success) {
+                this.showInstallModal();
+                this.updateModalInstructions();
+            }
             return;
         }
 
-        // Still no prompt - show modal with instructions
-        console.log('[PWAInstaller] Showing fallback modal with instructions');
-        this.showInstallModal();
+        // FALLBACK: No prompt after extended wait
+        console.log('[PWAInstaller] Timeout reached, showing manual instructions');
+        this.updateModalInstructions();
     }
 
     /**
@@ -435,37 +449,70 @@ class PWAInstaller {
      */
     waitForPrompt(timeoutMs) {
         return new Promise((resolve) => {
+            console.log(`[PWAInstaller] Waiting up to ${timeoutMs}ms for beforeinstallprompt...`);
+
             // Check immediately
             if (this.manager.getState().hasDeferredPrompt) {
+                console.log('[PWAInstaller] Prompt already available');
                 resolve(true);
                 return;
             }
 
-            const checkInterval = 100; // Check every 100ms
             let elapsed = 0;
 
             const intervalId = setInterval(() => {
-                elapsed += checkInterval;
+                elapsed += PROMPT_CHECK_INTERVAL;
 
                 if (this.manager.getState().hasDeferredPrompt) {
+                    console.log(`[PWAInstaller] Prompt available after ${elapsed}ms`);
                     clearInterval(intervalId);
                     resolve(true);
                     return;
                 }
 
                 if (elapsed >= timeoutMs) {
+                    console.log(`[PWAInstaller] Timeout after ${elapsed}ms`);
                     clearInterval(intervalId);
                     resolve(false);
                     return;
                 }
-            }, checkInterval);
+
+                // Log progress at 1-second intervals for debugging
+                if (elapsed % 1000 === 0) {
+                    console.log(`[PWAInstaller] Waiting... ${elapsed}ms`);
+                }
+            }, PROMPT_CHECK_INTERVAL);
         });
     }
 
-    showInstallModal() {
+    /**
+     * Show loading/waiting state while waiting for beforeinstallprompt
+     */
+    showWaitingForPromptState() {
+        if (!this.pwaInstructions) return;
+
+        this.pwaInstructions.innerHTML = `
+            <div class="install-instructions android waiting">
+                <h3>Checking Installation...</h3>
+                <div class="loading-spinner"></div>
+                <p class="waiting-message">Please wait while we check if your device supports direct installation.</p>
+                <p class="waiting-hint">This usually takes a few seconds...</p>
+            </div>
+        `;
+
+        if (this.pwaInstallAction) {
+            this.pwaInstallAction.textContent = 'Checking...';
+            this.pwaInstallAction.disabled = true;
+            this.pwaInstallAction.setAttribute('data-action', 'waiting');
+        }
+    }
+
+    showInstallModal(skipInstructions = false) {
         if (!this.pwaModal) return;
 
-        this.updateModalInstructions();
+        if (!skipInstructions) {
+            this.updateModalInstructions();
+        }
         this.pwaModal.classList.remove('hidden');
 
         // iOS-compatible scroll prevention
@@ -704,6 +751,9 @@ class PWAInstaller {
             } else {
                 this.pwaInstallAction.classList.remove('hidden');
                 this.pwaInstallAction.textContent = buttonText;
+
+                // Re-enable button (in case it was disabled during waiting state)
+                this.pwaInstallAction.disabled = false;
 
                 // Store button action type for click handler
                 this.pwaInstallAction.setAttribute('data-action', buttonAction);
