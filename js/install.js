@@ -320,6 +320,13 @@ class PWAInstaller {
                 if (action === 'install') {
                     // Has native prompt - trigger it
                     await this.showInstallPrompt();
+                } else if (action === 'retry-install') {
+                    // Retry install flow
+                    console.log('[PWAInstaller] Retrying install...');
+                    this.hideInstallModal();
+                    setTimeout(() => {
+                        this.handleInstallButtonClick();
+                    }, 100);
                 } else if (action === 'close') {
                     // iOS or waiting for engagement - just close modal
                     this.hideInstallModal();
@@ -391,15 +398,68 @@ class PWAInstaller {
         const state = this.manager.getState();
         console.log('[PWAInstaller] deferredPrompt available:', state.hasDeferredPrompt);
 
-        // If we have the native prompt available (Android Chrome), trigger it directly
+        // HAPPY PATH: Native prompt available - trigger it directly
         if (state.hasDeferredPrompt) {
-            console.log('[PWAInstaller] Native prompt available, triggering directly');
-            await this.showInstallPrompt();
-        } else {
-            // No native prompt - show modal with platform-specific instructions
-            console.log('[PWAInstaller] No native prompt, showing modal with instructions');
-            this.showInstallModal();
+            console.log('[PWAInstaller] Triggering native install prompt directly');
+            const result = await this.manager.installApp();
+
+            if (result.success) {
+                console.log('[PWAInstaller] User accepted installation');
+                // App will install - UI will update via appinstalled event
+            } else {
+                console.log('[PWAInstaller] User dismissed installation or error occurred');
+            }
+            return;
         }
+
+        // FALLBACK: No prompt available - wait briefly then show modal
+        console.log('[PWAInstaller] No prompt available, waiting briefly...');
+
+        const gotPrompt = await this.waitForPrompt(1500);
+
+        if (gotPrompt) {
+            console.log('[PWAInstaller] Prompt became available, triggering');
+            await this.manager.installApp();
+            return;
+        }
+
+        // Still no prompt - show modal with instructions
+        console.log('[PWAInstaller] Showing fallback modal with instructions');
+        this.showInstallModal();
+    }
+
+    /**
+     * Waits for the beforeinstallprompt event to fire
+     * @param {number} timeoutMs - Maximum time to wait in milliseconds
+     * @returns {Promise<boolean>} - True if prompt became available
+     */
+    waitForPrompt(timeoutMs) {
+        return new Promise((resolve) => {
+            // Check immediately
+            if (this.manager.getState().hasDeferredPrompt) {
+                resolve(true);
+                return;
+            }
+
+            const checkInterval = 100; // Check every 100ms
+            let elapsed = 0;
+
+            const intervalId = setInterval(() => {
+                elapsed += checkInterval;
+
+                if (this.manager.getState().hasDeferredPrompt) {
+                    clearInterval(intervalId);
+                    resolve(true);
+                    return;
+                }
+
+                if (elapsed >= timeoutMs) {
+                    clearInterval(intervalId);
+                    resolve(false);
+                    return;
+                }
+            }, checkInterval);
+        });
     }
 
     showInstallModal() {

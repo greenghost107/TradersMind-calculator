@@ -68,7 +68,8 @@ class PWAInstallManager {
     _setupEventListeners() {
         // Listen for beforeinstallprompt
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWAInstallManager] Before install prompt triggered');
+            console.log('[PWAInstallManager] beforeinstallprompt event captured');
+            console.log('[PWAInstallManager] Platform:', this._platform);
             e.preventDefault();
             this._deferredPrompt = e;
             this._isInstallable = true;
@@ -211,6 +212,7 @@ class PWAInstallManager {
 
             if (outcome === 'accepted') {
                 console.log('[PWAInstallManager] User accepted the install prompt');
+                console.log('[PWAInstallManager] Prompt result:', outcome);
                 this.saveInstallState('accepted');
                 this.trackInstallAttempt('accepted');
 
@@ -222,6 +224,7 @@ class PWAInstallManager {
                 return { success: true };
             } else {
                 console.log('[PWAInstallManager] User dismissed the install prompt');
+                console.log('[PWAInstallManager] Prompt result:', outcome);
                 this.saveInstallState('dismissed');
                 this.trackInstallAttempt('dismissed');
 
