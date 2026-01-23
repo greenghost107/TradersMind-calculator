@@ -66,9 +66,23 @@ class PWAInstallManager {
      * @private
      */
     _setupEventListeners() {
-        // Listen for beforeinstallprompt
+        // Check if prompt was already captured by early inline script in <head>
+        if (window.deferredInstallPrompt) {
+            console.log('[PWAInstallManager] Using early-captured prompt from',
+                window.deferredInstallPromptCaptureTime,
+                '(', Date.now() - window.deferredInstallPromptCaptureTime, 'ms ago)');
+            this._deferredPrompt = window.deferredInstallPrompt;
+            this._isInstallable = true;
+            this._isShowingPrompt = false;
+            // Clear global to prevent reuse
+            window.deferredInstallPrompt = null;
+            // Notify state change after a microtask to ensure listeners are ready
+            Promise.resolve().then(() => this._notifyStateChange());
+        }
+
+        // Still attach listener for any late-arriving prompts (e.g., after engagement)
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWAInstallManager] beforeinstallprompt event captured');
+            console.log('[PWAInstallManager] beforeinstallprompt event captured (late)');
             console.log('[PWAInstallManager] Platform:', this._platform);
             e.preventDefault();
             this._deferredPrompt = e;

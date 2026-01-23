@@ -212,4 +212,46 @@ test.describe('Android Install Flow - Realistic Timing', () => {
         // Check for waiting message text
         await expect(instructions).toContainText('Please wait while we check');
     });
+
+    test('should use early-captured prompt when available', async ({ page }) => {
+        // Simulate early capture by firing the event right after page starts loading
+        // This mimics what happens on GitHub Pages when the event fires before scripts load
+        await page.addInitScript(() => {
+            // Wait for the inline script to set up its listener, then fire the event
+            setTimeout(() => {
+                const event = new Event('beforeinstallprompt');
+                event.preventDefault = () => {};
+                event.prompt = async () => {
+                    window.__promptCalled = true;
+                    return Promise.resolve();
+                };
+                event.userChoice = Promise.resolve({ outcome: 'accepted' });
+
+                // Fire the event - the inline script in <head> will capture it
+                window.dispatchEvent(event);
+                console.log('[Test] Fired early beforeinstallprompt event');
+            }, 10); // Fire very early, before external scripts load
+        });
+
+        await page.goto('/');
+        await page.waitForLoadState('networkidle');
+
+        // Wait a bit for PWAInstallManager to initialize and pick up the early-captured prompt
+        await page.waitForTimeout(1000);
+
+        // Check that the manager picked up the early-captured prompt
+        const hasPrompt = await page.evaluate(() => {
+            return window.pwaInstaller?.manager?.getState().hasDeferredPrompt === true;
+        });
+        expect(hasPrompt).toBe(true);
+
+        // Click install - should use early-captured prompt immediately
+        await page.locator('#install-btn').click();
+
+        // Should trigger native prompt immediately (no loading state, or very brief)
+        await page.waitForTimeout(500);
+
+        const promptCalled = await page.evaluate(() => window.__promptCalled === true);
+        expect(promptCalled).toBe(true);
+    });
 });

@@ -6,6 +6,21 @@
     <meta name="theme-color" content="#2196f3">
     <title>TradersMind Calculator</title>
     <link rel="manifest" href="manifest.json">
+
+    <!-- CRITICAL: Capture beforeinstallprompt EARLY before any external scripts load -->
+    <script>
+        // Global variable to store early-captured prompt
+        window.deferredInstallPrompt = null;
+        window.deferredInstallPromptCaptureTime = null;
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.deferredInstallPrompt = e;
+            window.deferredInstallPromptCaptureTime = Date.now();
+            console.log('[Early Capture] beforeinstallprompt captured at', window.deferredInstallPromptCaptureTime);
+        });
+    </script>
+
     <link rel="icon" href="icons/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">

@@ -68,9 +68,12 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         const modal = page.locator('#pwa-install-modal');
         await expect(modal).not.toHaveClass(/hidden/);
 
-        // Should show manual install instructions (NOT "Installation Available Soon")
+        // First, should show loading state
         const instructions = page.locator('#pwa-instructions');
-        await expect(instructions).toContainText('Install This App');
+        await expect(instructions).toContainText('Checking Installation');
+
+        // After timeout, should show manual install instructions (NOT "Installation Available Soon")
+        await expect(instructions).toContainText('Install This App', { timeout: 6000 });
         await expect(instructions).toContainText('Tap the menu button');
         await expect(instructions).toContainText('⋮');
         await expect(instructions).not.toContainText('Installation Available Soon');
@@ -86,10 +89,10 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         await page.waitForLoadState('networkidle');
         await page.waitForTimeout(2000);
 
-        // Open modal - shows manual instructions initially
+        // Open modal - shows loading state initially
         await page.locator('#install-btn').click();
         const instructions = page.locator('#pwa-instructions');
-        await expect(instructions).toContainText('Tap the menu button');
+        await expect(instructions).toContainText('Checking Installation');
 
         // Simulate Chrome firing beforeinstallprompt after engagement
         await page.evaluate(() => {
@@ -120,6 +123,10 @@ test.describe('Android Install Flow - Real User Behavior', () => {
 
         // Open modal and follow manual install
         await page.locator('#install-btn').click();
+
+        // Wait for loading state to complete and manual instructions to show
+        const instructions = page.locator('#pwa-instructions');
+        await expect(instructions).toContainText('Tap the menu button', { timeout: 6000 });
 
         // User follows instructions and taps confirmation
         const confirmButton = page.locator('#pwa-install-action');
@@ -176,14 +183,14 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         const content = await instructions.textContent().catch(() => '');
 
         // Either shows loading state OR already loaded (both are acceptable)
-        if (content.includes('Installation Loading')) {
-            // Wait for service worker to register
-            await testPage.waitForTimeout(2000);
+        if (content.includes('Checking Installation') || content.includes('Installation Loading')) {
+            // Wait for timeout to complete and show manual instructions
+            await testPage.waitForTimeout(5500);
 
             // Should update to show install instructions
             await expect(instructions).toContainText('Install This App');
         } else {
-            // Already showing install instructions (SW registered fast)
+            // Already showing install instructions
             await expect(instructions).toContainText('Install This App');
         }
 
@@ -209,7 +216,8 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         await expect(modal).not.toHaveClass(/hidden/);
 
         const instructions = page.locator('#pwa-instructions');
-        await expect(instructions).toContainText('Install This App');
+        // Wait for loading state to complete
+        await expect(instructions).toContainText('Install This App', { timeout: 6000 });
         await expect(instructions).toContainText('Tap the menu button');
     });
 
@@ -224,8 +232,9 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         // Verify all three steps are present
         const instructions = page.locator('#pwa-instructions');
 
+        // Wait for loading state to complete and manual instructions to show
         // Step 1: Menu button
-        await expect(instructions).toContainText('Tap the menu button');
+        await expect(instructions).toContainText('Tap the menu button', { timeout: 6000 });
         await expect(instructions).toContainText('⋮');
         await expect(instructions).toContainText('(top right corner)');
 
