@@ -260,7 +260,7 @@ test.describe('PWA Installability Criteria', () => {
       await page.waitForLoadState('networkidle');
 
       // Test static asset detection logic (from sw.js isStaticAsset function)
-      const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
+      const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.json'];
 
       const isStaticDetection = await page.evaluate((extensions) => {
         const testUrls = [
@@ -467,7 +467,7 @@ test.describe('PWA Installability Criteria', () => {
       await page.waitForTimeout(1000);
 
       const capturedPrompt = await page.evaluate(() => {
-        return window.deferredPrompt !== null && window.deferredPrompt !== undefined;
+        return window.deferredInstallPrompt !== null && window.deferredInstallPrompt !== undefined;
       });
 
       expect(capturedPrompt).toBe(true);

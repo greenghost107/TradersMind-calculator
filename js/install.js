@@ -33,9 +33,10 @@ class PWAInstaller {
         this.init();
     }
 
-    init() {
+    async init() {
         this.bindElements();
-        this.registerServiceWorker();
+        await this.registerServiceWorker();
+        await this.waitForServiceWorkerReady();
         this.attachEventListeners();
         this.initEngagementTracking();
         this.initAutoPrompt();
@@ -182,11 +183,23 @@ class PWAInstaller {
     async registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
+                // Wait for the page to be fully loaded and add a small delay
+                // This ensures Chrome has time to evaluate PWA installability
+                if (document.readyState !== 'complete') {
+                    await new Promise(resolve => window.addEventListener('load', resolve));
+                }
+                await new Promise(resolve => setTimeout(resolve, 100)); // Small delay for Chrome
+
                 console.log('[PWAInstaller] Registering service worker...');
-                const registration = await navigator.serviceWorker.register('./sw.js');
-                
+
+                // Dynamically resolve the service worker path based on the current location
+                const swPath = new URL('sw.js', window.location.href).href;
+                const registration = await navigator.serviceWorker.register(swPath, {
+                    scope: new URL('./', window.location.href).href
+                });
+
                 console.log('[PWAInstaller] Service worker registered successfully:', registration.scope);
-                
+
                 registration.addEventListener('updatefound', () => {
                     console.log('[PWAInstaller] New service worker found');
                     this.handleServiceWorkerUpdate(registration);
@@ -202,6 +215,31 @@ class PWAInstaller {
         } else {
             console.warn('[PWAInstaller] Service workers not supported');
         }
+    }
+
+    async waitForServiceWorkerReady() {
+        if (!('serviceWorker' in navigator)) return false;
+
+        return new Promise((resolve) => {
+            if (navigator.serviceWorker.controller) {
+                console.log('[PWAInstaller] Service worker already controlling the page');
+                resolve(true);
+                return;
+            }
+
+            navigator.serviceWorker.ready.then((registration) => {
+                if (registration.active) {
+                    console.log('[PWAInstaller] Service worker is now ready');
+                    resolve(true);
+                } else {
+                    console.log('[PWAInstaller] Service worker registered but not active');
+                    resolve(false);
+                }
+            }).catch(() => {
+                console.error('[PWAInstaller] Service worker ready check failed');
+                resolve(false);
+            });
+        });
     }
 
     async isServiceWorkerReady() {

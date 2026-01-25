@@ -1,17 +1,25 @@
-const CACHE_NAME = 'tradersmind-calculator-v4';
-const STATIC_CACHE_NAME = 'tradersmind-static-v4';
+const CACHE_NAME = 'tradersmind-calculator-v5';
+const STATIC_CACHE_NAME = 'tradersmind-static-v5';
 
-// Use relative paths for GitHub Pages compatibility
+// Get the base path dynamically
+const getBasePath = () => {
+    const swUrl = self.location.href;
+    return swUrl.substring(0, swUrl.lastIndexOf('/') + 1);
+};
+
+const BASE_PATH = getBasePath();
+
+// Use dynamic base path for proper resolution in any deployment context
 const STATIC_ASSETS = [
-  './',
-  './index.html',
-  './css/styles.css',
-  './js/app.js',
-  './js/calculator.js',
-  './js/storage.js',
-  './js/pwaInstallManager.js',
-  './js/install.js',
-  './manifest.json'
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'css/styles.css',
+  BASE_PATH + 'js/app.js',
+  BASE_PATH + 'js/calculator.js',
+  BASE_PATH + 'js/storage.js',
+  BASE_PATH + 'js/pwaInstallManager.js',
+  BASE_PATH + 'js/install.js',
+  BASE_PATH + 'manifest.json'
 ];
 
 const CACHE_STRATEGIES = {
@@ -96,7 +104,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 function isStaticAsset(url) {
-  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2'];
+  const staticExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.svg', '.ico', '.woff', '.woff2', '.json'];
   const urlPath = new URL(url).pathname;
 
   // Check file extensions

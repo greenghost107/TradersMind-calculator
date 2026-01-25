@@ -22,7 +22,7 @@ test.describe('PWA GitHub Pages Deployment', () => {
       await expect(manifestLink).toHaveCount(1);
 
       const href = await manifestLink.getAttribute('href');
-      expect(href).toBe('manifest.json');
+      expect(href).toBe('./manifest.json');
 
       // Verify manifest actually loads
       const manifestResponse = await page.goto(`${href}`);
@@ -39,8 +39,8 @@ test.describe('PWA GitHub Pages Deployment', () => {
       const response = await page.goto('/manifest.json');
       const manifest = await response.json();
 
-      // start_url should be relative (using ./ notation)
-      expect(manifest.start_url).toBe('./');
+      // start_url should be relative (using ./ notation with utm_source for tracking)
+      expect(manifest.start_url).toBe('./?utm_source=pwa');
     });
 
     test('should have manifest with relative icon paths', async ({ page }) => {

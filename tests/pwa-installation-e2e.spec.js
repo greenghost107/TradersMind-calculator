@@ -39,19 +39,19 @@ test.describe('PWA Installation End-to-End Flows', () => {
 
       await page.goto('/');
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000); // Wait longer for service worker to be ready
 
       // Step 1: Verify install button is visible
       const installButton = page.locator('#install-fab, button:has-text("Install"), [aria-label*="Install"]').first();
-      await expect(installButton).toBeVisible();
+      await expect(installButton).toBeVisible({ timeout: 10000 });
 
       // Step 2: Click install button
       await installButton.click();
       await page.waitForTimeout(500);
 
       // Step 3: Verify iOS modal appears with instructions
-      const modal = page.locator('.modal-content, .install-modal, [role="dialog"]').first();
-      await expect(modal).toBeVisible();
+      const modal = page.locator('.pwa-modal-content, .modal-content, .install-modal, [role="dialog"]').first();
+      await expect(modal).toBeVisible({ timeout: 10000 });
 
       const modalText = await modal.textContent();
       expect(modalText).toMatch(/Share|Add to Home Screen|share button|home screen/i);
@@ -62,10 +62,11 @@ test.describe('PWA Installation End-to-End Flows', () => {
 
       await page.goto('/');
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000); // Wait longer for service worker to be ready
 
       // Step 1: Click install button
       const installButton = page.locator('#install-fab, button:has-text("Install")').first();
+      await expect(installButton).toBeVisible({ timeout: 10000 });
       await installButton.click();
       await page.waitForTimeout(500);
 
@@ -114,9 +115,10 @@ test.describe('PWA Installation End-to-End Flows', () => {
 
       await page.goto('/');
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000); // Wait longer for service worker to be ready
 
       const installButton = page.locator('#install-fab, button:has-text("Install")').first();
+      await expect(installButton).toBeVisible({ timeout: 10000 });
       await installButton.click();
       await page.waitForTimeout(500);
 

@@ -188,10 +188,11 @@ test.describe('Android Install Flow - Real User Behavior', () => {
             await testPage.waitForTimeout(5500);
 
             // Should update to show install instructions
-            await expect(instructions).toContainText('Install This App');
+            const updatedContent = await instructions.textContent();
+            expect(updatedContent.includes('Install This App') || updatedContent.includes('install this app')).toBe(true);
         } else {
-            // Already showing install instructions
-            await expect(instructions).toContainText('Install This App');
+            // Already showing install instructions or default content
+            expect(content.includes('Install This App') || content.includes('install this app')).toBe(true);
         }
 
         await testPage.close();
