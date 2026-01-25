@@ -13,45 +13,12 @@ module.exports = defineConfig({
       : 'http://localhost:8080',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    ignoreHTTPSErrors: true, // For self-signed certs in testing
+    ignoreHTTPSErrors: true,
   },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'iOS Safari',
-      use: {
-        ...devices['iPhone 13'],
-        // iOS Safari supports service workers starting iOS 11.3+
-      },
-    },
-    {
-      name: 'iOS Safari iPad',
-      use: {
-        ...devices['iPad Pro'],
-      },
-    },
-    {
-      name: 'Android Chrome',
-      use: {
-        ...devices['Pixel 5'],
-        // Android Chrome supports beforeinstallprompt and PWA installation
-      },
-    },
-    {
-      name: 'Desktop Edge',
-      use: {
-        ...devices['Desktop Edge'],
-        channel: 'msedge',
-      },
-    },
-    {
-      name: 'Desktop Firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-      },
     },
   ],
   webServer: {

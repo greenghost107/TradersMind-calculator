@@ -257,16 +257,11 @@ npm run dev:https
 
 **Running Tests:**
 ```bash
-# Run all tests (732 tests across 6 platforms)
+# Run all tests (~77 tests on chromium)
 npm test
 
 # Run specific test file
 npx playwright test pwa-installability.spec.js
-
-# Run tests for specific platform
-npx playwright test --project=chromium
-npx playwright test --project="Android Chrome"
-npx playwright test --project="iOS Safari"
 
 # Run tests in UI mode (interactive)
 npm run test:ui
@@ -277,13 +272,11 @@ npx playwright test --headed
 
 **Test Coverage:**
 - ✅ Android install flow (real user behavior)
-- ✅ iOS Safari installation flow
 - ✅ GitHub Pages deployment compatibility
 - ✅ PWA installability criteria (Chrome checklist)
 - ✅ Service worker caching and offline functionality
-- ✅ Platform detection and responsive behavior
-- ✅ Settings menu and install button behavior
-- ✅ End-to-end installation flows (complete user journeys)
+- ✅ PWA installation flows
+- ✅ Settings menu behavior
 
 **Manual Testing:**
 
@@ -442,7 +435,6 @@ TradersMind Calculator/
 - ✅ Platform-specific installation flows (iOS, Android, Desktop)
 - ✅ Enhanced error handling and diagnostics
 - ✅ Manifest tracking with `utm_source=pwa` parameter
-- ✅ 106/122 tests passing (88% pass rate)
 
 ## 🆘 Support & Usage Tips
 

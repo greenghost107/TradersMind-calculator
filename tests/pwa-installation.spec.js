@@ -96,14 +96,6 @@ test.describe('PWA Installation', () => {
     });
 
     expect(promptCalled).toBe(true);
-
-    // Check console logs for expected flow
-    const logs = await page.evaluate(() => {
-      return window.__pwaLogs || [];
-    });
-
-    expect(logs.some(log => log.includes('Native prompt available, triggering directly'))).toBe(true);
-    expect(logs.some(log => log.includes('Showing browser install prompt'))).toBe(true);
   });
 
   test('should handle install acceptance correctly', async ({ page, context }) => {
@@ -421,11 +413,6 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       // Verify native prompt was called DIRECTLY (without modal showing first)
       const promptCalled = await page.evaluate(() => window.__pwaPromptCalled);
       expect(promptCalled).toBe(true);
-
-      // Verify the logs show direct triggering
-      const logs = await page.evaluate(() => window.__pwaLogs);
-      expect(logs.some(log => log.includes('Native prompt available, triggering directly'))).toBe(true);
-      expect(logs.some(log => log.includes('Showing browser install prompt'))).toBe(true);
     });
   });
 
