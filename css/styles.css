@@ -402,6 +402,59 @@ input[type="number"], select {
     min-height: 44px;
 }
 
+/* Position Type Toggle */
+.position-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #444;
+}
+
+.position-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background-color: #333;
+    color: #b0b0b0;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 44px;
+}
+
+.position-btn:first-child {
+    border-right: 1px solid #444;
+}
+
+.position-btn:hover:not(.active) {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+}
+
+.position-btn.active {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.position-btn.active[id="long-btn"] {
+    background-color: #2e7d32;
+}
+
+.position-btn.active[id="short-btn"] {
+    background-color: #c62828;
+}
+
+/* Position indicator for result sections */
+.result-section.short-position {
+    border-left: 4px solid #c62828;
+}
+
+.result-section.long-position {
+    border-left: 4px solid #2e7d32;
+}
+
 /* Range Slider Styles */
 .risk-slider {
     width: 100%;

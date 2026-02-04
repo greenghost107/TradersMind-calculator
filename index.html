@@ -13,11 +13,23 @@
         window.deferredInstallPrompt = null;
         window.deferredInstallPromptCaptureTime = null;
 
+        // Enhanced timing diagnostics
+        window.__pwaDebug = {
+            scriptLoadTime: Date.now(),
+            promptCaptureTime: null,
+            swRegistrationTime: null,
+            swActiveTime: null,
+            swControllingTime: null,
+            managerInitTime: null
+        };
+
         window.addEventListener('beforeinstallprompt', function(e) {
             e.preventDefault();
             window.deferredInstallPrompt = e;
             window.deferredInstallPromptCaptureTime = Date.now();
-            console.log('[Early Capture] beforeinstallprompt captured at', window.deferredInstallPromptCaptureTime);
+            window.__pwaDebug.promptCaptureTime = Date.now();
+            console.log('[Early Capture] beforeinstallprompt at',
+                Date.now() - window.__pwaDebug.scriptLoadTime, 'ms after script load');
         });
     </script>
 
@@ -75,6 +87,14 @@
             </div>
 
             <div class="input-group">
+                <label id="position-type-label">Position Type</label>
+                <div class="position-toggle" role="group" aria-labelledby="position-type-label">
+                    <button type="button" id="long-btn" class="position-btn active" aria-pressed="true">Long</button>
+                    <button type="button" id="short-btn" class="position-btn" aria-pressed="false">Short</button>
+                </div>
+            </div>
+
+            <div class="input-group">
                 <label for="stop-loss">Stop Loss ($) *</label>
                 <input type="number" id="stop-loss" step="0.01" min="0" required>
             </div>
@@ -94,7 +114,7 @@
                 <h3>💰 Risk Calculation</h3>
                 <div class="result-group">
                     <div class="result-card shares-to-buy-card">
-                        <h4>Shares to Buy</h4>
+                        <h4 id="risk-shares-label">Shares to Buy</h4>
                         <div id="risk-shares-to-buy" class="result-value">-</div>
                         <div id="risk-constraint-label" class="result-subtitle" style="display: none;">Limited by max positions</div>
                     </div>
@@ -130,7 +150,7 @@
                 <h3>📊 Total Max Position</h3>
                 <div class="result-group">
                     <div class="result-card">
-                        <h4>Shares to Buy</h4>
+                        <h4 id="max-shares-label">Shares to Buy</h4>
                         <div id="shares-to-buy" class="result-value">-</div>
                     </div>
                     <div class="result-card">

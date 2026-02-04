@@ -3,7 +3,7 @@ class PositionCalculator {
         // Risk-based position calculator
     }
 
-    validateInputs(entryPrice, stopLoss, accountSize, maxPositions, atrPercent, riskPercent) {
+    validateInputs(entryPrice, stopLoss, accountSize, maxPositions, atrPercent, riskPercent, positionType = 'long') {
         const errors = [];
 
         if (!entryPrice || entryPrice <= 0) {
@@ -32,6 +32,16 @@ class PositionCalculator {
 
         if (entryPrice && stopLoss && entryPrice === stopLoss) {
             errors.push('Entry price and stop loss cannot be the same');
+        }
+
+        // Position type validation
+        if (entryPrice && stopLoss && entryPrice !== stopLoss) {
+            if (positionType === 'long' && stopLoss >= entryPrice) {
+                errors.push('For long positions, stop loss must be below entry price');
+            }
+            if (positionType === 'short' && stopLoss <= entryPrice) {
+                errors.push('For short positions, stop loss must be above entry price');
+            }
         }
 
         return errors;
@@ -236,10 +246,11 @@ class PositionCalculator {
             accountSize,
             maxPositions,
             atrPercent,
-            riskPercent
+            riskPercent,
+            positionType = 'long'
         } = inputs;
 
-        const errors = this.validateInputs(entryPrice, stopLoss, accountSize, maxPositions, atrPercent, riskPercent);
+        const errors = this.validateInputs(entryPrice, stopLoss, accountSize, maxPositions, atrPercent, riskPercent, positionType);
         if (errors.length > 0) {
             return { errors };
         }

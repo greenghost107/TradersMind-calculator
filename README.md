@@ -5,6 +5,7 @@ A comprehensive trading position size calculator designed to help traders manage
 ## ✨ Features
 
 ### Core Functionality
+- **Long & Short Positions**: Toggle between long and short trades with direction-aware validation and target price calculation
 - **Position Size Calculation**: Determines optimal number of shares based on account size and risk parameters
 - **Risk Analysis**: Calculates dollar risk amounts and risk percentages using a configurable risk slider (0.1% - 1.5%)
 - **MIN Position Sizing**: Uses the smaller of risk-based sizing and diversification limits for safety
@@ -32,7 +33,8 @@ A comprehensive trading position size calculator designed to help traders manage
 
 2. **Input Trade Parameters**:
    - **Entry Price ($)**: Your planned entry price for the stock
-   - **Stop Loss ($)**: Your stop-loss price level
+   - **Position Type**: Toggle between **Long** (default) and **Short** — the calculator validates stop placement and adjusts labels and target prices accordingly
+   - **Stop Loss ($)**: Your stop-loss price level (must be below entry for longs, above entry for shorts)
    - **Risk % of Account**: Use the slider to set your risk tolerance (0.1% - 1.5%, default: 1.0%)
 
 3. **Review Risk Calculation**:
@@ -89,6 +91,22 @@ The app features **smart installation** that prompts you at the right time based
 
 ## 📊 Understanding the Calculations
 
+### Long vs Short Positions
+The position type toggle controls how the calculator interprets your entry and stop loss:
+
+| | Long | Short |
+|---|---|---|
+| **Stop Loss** | Below entry price | Above entry price |
+| **Target Price** | Entry + (risk × ratio) | Entry − (risk × ratio) |
+| **Label** | Shares to Buy | Shares to Short |
+| **Result Indicator** | Green left border | Red left border |
+
+The core math uses `Math.abs(entryPrice - stopLoss)` for risk per share, so position sizing is direction-agnostic. The toggle enforces correct stop placement and flips the target price direction.
+
+**Short example**: Entry $100, Stop $110, Risk 1%, Account $10,000
+- Risk per share: $10 → Position size: 10 shares to short
+- Target (5:1 reward): $100 − ($10 × 5) = $50
+
 ### Risk Calculation (Primary Method)
 The calculator uses a MIN function to determine position size based on the smaller of two calculations:
 
@@ -127,7 +145,7 @@ The calculator adjusts position sizes based on volatility:
 
 ### Risk Management
 - Use the risk slider to keep individual position risk between 0.5-1.5% of account
-- Set appropriate stop-loss levels before entering trades
+- Set appropriate stop-loss levels before entering trades: below entry for longs, above entry for shorts
 - Limit total positions to maintain proper diversification
 - Use ATR adjustments for volatile stocks
 

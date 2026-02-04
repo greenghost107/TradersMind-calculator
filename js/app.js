@@ -44,7 +44,12 @@ class TradersMindApp {
             atrPositionValueDisplay: document.getElementById('atr-position-value-display'),
             positionDifference: document.getElementById('position-difference'),
             volatilityImpact: document.getElementById('volatility-impact'),
-            positionValidation: document.getElementById('position-validation')
+            positionValidation: document.getElementById('position-validation'),
+
+            longBtn: document.getElementById('long-btn'),
+            shortBtn: document.getElementById('short-btn'),
+            riskSharesLabel: document.getElementById('risk-shares-label'),
+            maxSharesLabel: document.getElementById('max-shares-label')
         };
     }
 
@@ -71,6 +76,14 @@ class TradersMindApp {
                 this.updateRiskPercentDisplay();
                 this.handleInputChange();
             });
+        }
+
+        // Position type toggle handlers
+        if (this.elements.longBtn) {
+            this.elements.longBtn.addEventListener('click', () => this.setPositionType('long'));
+        }
+        if (this.elements.shortBtn) {
+            this.elements.shortBtn.addEventListener('click', () => this.setPositionType('short'));
         }
 
         window.addEventListener('beforeunload', () => {
@@ -134,6 +147,23 @@ class TradersMindApp {
         this.clearValidationErrors();
     }
 
+    setPositionType(type) {
+        this.elements.longBtn.classList.toggle('active', type === 'long');
+        this.elements.shortBtn.classList.toggle('active', type === 'short');
+        this.elements.longBtn.setAttribute('aria-pressed', type === 'long');
+        this.elements.shortBtn.setAttribute('aria-pressed', type === 'short');
+
+        const label = type === 'long' ? 'Shares to Buy' : 'Shares to Short';
+        this.elements.riskSharesLabel.textContent = label;
+        this.elements.maxSharesLabel.textContent = label;
+
+        this.handleInputChange();
+    }
+
+    getPositionType() {
+        return this.elements.shortBtn.classList.contains('active') ? 'short' : 'long';
+    }
+
     getInputValues() {
         return {
             entryPrice: parseFloat(this.elements.entryPrice.value) || 0,
@@ -141,7 +171,8 @@ class TradersMindApp {
             atrPercent: parseFloat(this.elements.atrPercent.value) || 5.0,
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
             maxPositions: parseInt(this.elements.maxPositions.value) || 10,
-            riskPercent: parseFloat(this.elements.riskPercent.value) || 1.0
+            riskPercent: parseFloat(this.elements.riskPercent.value) || 1.0,
+            positionType: this.getPositionType()
         };
     }
 
@@ -190,11 +221,20 @@ class TradersMindApp {
         this.elements.positionValidation.textContent = result.positionValidation.message;
 
         this.updateResultColors(result);
+        this.updatePositionIndicators();
 
         // Dispatch calculation complete event for PWA engagement tracking
         document.dispatchEvent(new CustomEvent('calculation-complete', {
             detail: { result: result }
         }));
+    }
+
+    updatePositionIndicators() {
+        const isShort = this.getPositionType() === 'short';
+        document.querySelectorAll('.result-section').forEach(section => {
+            section.classList.toggle('short-position', isShort);
+            section.classList.toggle('long-position', !isShort);
+        });
     }
 
     updateResultColors(result) {
@@ -296,6 +336,9 @@ class TradersMindApp {
         if (this.elements.accountSize && data.accountSize) {
             this.elements.accountSize.value = data.accountSize;
         }
+        if (data.positionType) {
+            this.setPositionType(data.positionType);
+        }
     }
 
     saveCurrentState() {
@@ -305,7 +348,8 @@ class TradersMindApp {
             atrPercent: this.elements.atrPercent.value,
             riskPercent: this.elements.riskPercent.value,
             maxPositions: this.elements.maxPositions.value,
-            accountSize: this.elements.accountSize.value
+            accountSize: this.elements.accountSize.value,
+            positionType: this.getPositionType()
         };
 
         this.storage.saveCalculationData(calculationData);
