@@ -194,8 +194,8 @@ test('target prices go below entry for short position', async ({ page }) => {
   await expect(page.locator('#deal-target-5r')).toContainText('$75.00');
 });
 
-// Test 13: Net % is lower than gross % (commission deducted)
-test('net % is lower than gross % due to commission', async ({ page }) => {
+// Test 13: Copy button is visible next to R info
+test('copy button is visible in deal section', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1000);
@@ -203,19 +203,13 @@ test('net % is lower than gross % due to commission', async ({ page }) => {
   const dealBtn = page.locator('#executed-deal-btn');
   await dealBtn.click();
 
-  await fillBaseInputs(page);
-
-  // Net % should be less than 10% for 2R since commission is deducted
-  const grossText = await page.locator('#deal-percent-2r').textContent();
-  const netText = await page.locator('#deal-net-2r').textContent();
-
-  const gross = parseFloat(grossText);
-  const net = parseFloat(netText);
-  expect(net).toBeLessThan(gross);
+  const copyBtn = page.locator('#deal-copy-btn');
+  await expect(copyBtn).toBeVisible();
 });
 
-// Test 14: Changing commission updates the net % values
-test('changing commission updates net % values', async ({ page }) => {
+// Test 14: Copy button gets "copied" class on click
+test('copy button shows copied feedback on click', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/');
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(1000);
@@ -225,14 +219,9 @@ test('changing commission updates net % values', async ({ page }) => {
 
   await fillBaseInputs(page);
 
-  const net2rBefore = await page.locator('#deal-net-2r').textContent();
-
-  // Change commission to $1.00
-  await page.fill('#deal-commission', '1.00');
-  await page.waitForTimeout(400);
-
-  const net2rAfter = await page.locator('#deal-net-2r').textContent();
-  expect(net2rAfter).not.toBe(net2rBefore);
+  const copyBtn = page.locator('#deal-copy-btn');
+  await copyBtn.click();
+  await expect(copyBtn).toHaveClass(/copied/);
 });
 
 // Test 15: Results show dash when inputs are cleared

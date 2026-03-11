@@ -124,7 +124,13 @@
                 <input type="number" id="deal-commission" step="0.01" min="0" value="0.35">
             </div>
             <div class="deal-r-info">
-                R (Risk per Share): <strong id="deal-r-value">-</strong>
+                <span>R (Risk per Share): <strong id="deal-r-value">-</strong></span>
+                <button id="deal-copy-btn" class="deal-copy-btn" aria-label="Copy R and targets to clipboard" title="Copy">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
             </div>
             <div class="deal-table">
                 <div class="deal-grid">
@@ -136,14 +142,10 @@
                     <div class="deal-cell value-cell" id="deal-target-2r">-</div>
                     <div class="deal-cell value-cell" id="deal-target-3r">-</div>
                     <div class="deal-cell value-cell" id="deal-target-5r">-</div>
-                    <div class="deal-cell row-label">% Gain</div>
-                    <div class="deal-cell value-cell" id="deal-percent-2r">-</div>
-                    <div class="deal-cell value-cell" id="deal-percent-3r">-</div>
-                    <div class="deal-cell value-cell" id="deal-percent-5r">-</div>
-                    <div class="deal-cell row-label deal-row-last">Net %</div>
-                    <div class="deal-cell net-cell deal-row-last" id="deal-net-2r">-</div>
-                    <div class="deal-cell net-cell deal-row-last" id="deal-net-3r">-</div>
-                    <div class="deal-cell net-cell deal-row-last" id="deal-net-5r">-</div>
+                    <div class="deal-cell row-label deal-row-last">% Gain</div>
+                    <div class="deal-cell value-cell deal-row-last" id="deal-percent-2r">-</div>
+                    <div class="deal-cell value-cell deal-row-last" id="deal-percent-3r">-</div>
+                    <div class="deal-cell value-cell deal-row-last" id="deal-percent-5r">-</div>
                 </div>
             </div>
         </div>

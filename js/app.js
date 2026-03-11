@@ -61,9 +61,7 @@ class TradersMindApp {
             dealPercent2r: document.getElementById('deal-percent-2r'),
             dealPercent3r: document.getElementById('deal-percent-3r'),
             dealPercent5r: document.getElementById('deal-percent-5r'),
-            dealNet2r: document.getElementById('deal-net-2r'),
-            dealNet3r: document.getElementById('deal-net-3r'),
-            dealNet5r: document.getElementById('deal-net-5r')
+            dealCopyBtn: document.getElementById('deal-copy-btn')
         };
     }
 
@@ -106,6 +104,10 @@ class TradersMindApp {
 
         if (this.elements.executedDealBtn) {
             this.elements.executedDealBtn.addEventListener('click', () => this.toggleExecutedDeal());
+        }
+
+        if (this.elements.dealCopyBtn) {
+            this.elements.dealCopyBtn.addEventListener('click', () => this.copyDealToClipboard());
         }
 
         if (this.elements.dealCommission) {
@@ -396,20 +398,37 @@ class TradersMindApp {
         this.elements.dealPercent2r.textContent = r2.formatted.grossPercent;
         this.elements.dealPercent3r.textContent = r3.formatted.grossPercent;
         this.elements.dealPercent5r.textContent = r5.formatted.grossPercent;
-
-        this.elements.dealNet2r.textContent = r2.formatted.netPercent;
-        this.elements.dealNet3r.textContent = r3.formatted.netPercent;
-        this.elements.dealNet5r.textContent = r5.formatted.netPercent;
     }
 
     clearExecutedDeal() {
         const dealElements = [
             this.elements.dealTarget2r, this.elements.dealTarget3r, this.elements.dealTarget5r,
-            this.elements.dealPercent2r, this.elements.dealPercent3r, this.elements.dealPercent5r,
-            this.elements.dealNet2r, this.elements.dealNet3r, this.elements.dealNet5r
+            this.elements.dealPercent2r, this.elements.dealPercent3r, this.elements.dealPercent5r
         ];
         dealElements.forEach(el => { if (el) el.textContent = '-'; });
         if (this.elements.dealRValue) this.elements.dealRValue.textContent = '-';
+    }
+
+    copyDealToClipboard() {
+        const r = this.elements.dealRValue.textContent;
+        const t2 = this.elements.dealTarget2r.textContent;
+        const t3 = this.elements.dealTarget3r.textContent;
+        const t5 = this.elements.dealTarget5r.textContent;
+        const p2 = this.elements.dealPercent2r.textContent;
+        const p3 = this.elements.dealPercent3r.textContent;
+        const p5 = this.elements.dealPercent5r.textContent;
+
+        const text = [
+            `R: ${r}`,
+            `       2R       3R       5R`,
+            `Target ${t2}  ${t3}  ${t5}`,
+            `% Gain ${p2}  ${p3}  ${p5}`
+        ].join('\n');
+
+        navigator.clipboard.writeText(text).then(() => {
+            this.elements.dealCopyBtn.classList.add('copied');
+            setTimeout(() => this.elements.dealCopyBtn.classList.remove('copied'), 1500);
+        }).catch(() => {});
     }
 
     loadSavedData() {

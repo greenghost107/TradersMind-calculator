@@ -454,6 +454,37 @@ header h1 {
     border: 1px solid #444;
     font-size: 0.875rem;
     color: #b0b0b0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.deal-copy-btn {
+    background: none;
+    border: 1px solid #555;
+    color: #b0b0b0;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+    min-width: 28px;
+    min-height: 28px;
+}
+
+.deal-copy-btn:hover,
+.deal-copy-btn:focus {
+    color: #fff;
+    border-color: #2196f3;
+    background-color: rgba(33, 150, 243, 0.15);
+    outline: none;
+}
+
+.deal-copy-btn.copied {
+    color: #4caf50;
+    border-color: #4caf50;
 }
 
 .deal-r-info strong {
@@ -519,12 +550,6 @@ header h1 {
     font-weight: 600;
 }
 
-.deal-cell.net-cell {
-    background-color: #2a2a2a;
-    color: #ff9800;
-    font-weight: 600;
-    font-size: 0.8rem;
-}
 
 @media (max-width: 480px) {
     .deal-section {
@@ -539,10 +564,6 @@ header h1 {
     .deal-cell.row-label {
         font-size: 0.7rem;
         padding-left: 0.5rem;
-    }
-
-    .deal-cell.net-cell {
-        font-size: 0.7rem;
     }
 
     .deal-commission-row input {
