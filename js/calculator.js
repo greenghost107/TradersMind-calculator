@@ -238,6 +238,49 @@ class PositionCalculator {
         return new Intl.NumberFormat('en-US').format(shares);
     }
 
+    calculateExecutedDeal(entryPrice, stopLoss, positionType, shares, commission) {
+        const R = Math.abs(entryPrice - stopLoss);
+        if (R === 0 || entryPrice <= 0) return null;
+
+        const commissionPerShare = shares > 0 ? commission / shares : 0;
+        const multipliers = [2, 3, 5];
+
+        const targets = multipliers.map(mult => {
+            const targetPrice = positionType === 'long'
+                ? entryPrice + mult * R
+                : entryPrice - mult * R;
+
+            const grossGain = mult * R;
+            const grossPercent = (grossGain / entryPrice) * 100;
+            const netGain = grossGain - commissionPerShare;
+            const netPercent = (netGain / entryPrice) * 100;
+
+            return {
+                multiplier: mult,
+                targetPrice,
+                grossGain,
+                grossPercent,
+                netGain,
+                netPercent,
+                formatted: {
+                    label: `${mult}R`,
+                    targetPrice: this.formatCurrency(targetPrice),
+                    grossPercent: `${grossPercent.toFixed(2)}%`,
+                    netPercent: `${netPercent.toFixed(2)}%`
+                }
+            };
+        });
+
+        return {
+            R,
+            commissionPerShare,
+            targets,
+            formatted: {
+                R: this.formatCurrency(R)
+            }
+        };
+    }
+
 
     calculate(inputs) {
         const {

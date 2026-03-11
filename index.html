@@ -43,6 +43,12 @@
 <body>
     <header>
         <h1>TradersMind Calculator</h1>
+        <div class="header-right">
+        <button id="executed-deal-btn" class="executed-deal-btn"
+                aria-label="Toggle Executed Deal panel"
+                aria-pressed="false">
+            ✅ Deal
+        </button>
         <div class="header-menu-container">
             <button id="settings-menu-btn" class="settings-menu-btn"
                     aria-label="Settings menu"
@@ -64,6 +70,7 @@
                     <span id="menu-install-text">Add to Home Screen</span>
                 </button>
             </div>
+        </div>
         </div>
     </header>
 
@@ -105,6 +112,38 @@
                 <input type="range" id="risk-percent" min="0.1" max="1.5" step="0.1" value="1.0" class="risk-slider">
                 <div class="risk-display">
                     <span id="risk-percent-value">1.0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executed Deal Section -->
+        <div id="executed-deal-section" class="deal-section hidden">
+            <h3>✅ Executed Deal</h3>
+            <div class="deal-commission-row">
+                <label for="deal-commission">Total Commission ($)</label>
+                <input type="number" id="deal-commission" step="0.01" min="0" value="0.35">
+            </div>
+            <div class="deal-r-info">
+                R (Risk per Share): <strong id="deal-r-value">-</strong>
+            </div>
+            <div class="deal-table">
+                <div class="deal-grid">
+                    <div class="deal-cell header-cell"></div>
+                    <div class="deal-cell header-cell">2R</div>
+                    <div class="deal-cell header-cell">3R</div>
+                    <div class="deal-cell header-cell">5R</div>
+                    <div class="deal-cell row-label">Target</div>
+                    <div class="deal-cell value-cell" id="deal-target-2r">-</div>
+                    <div class="deal-cell value-cell" id="deal-target-3r">-</div>
+                    <div class="deal-cell value-cell" id="deal-target-5r">-</div>
+                    <div class="deal-cell row-label">% Gain</div>
+                    <div class="deal-cell value-cell" id="deal-percent-2r">-</div>
+                    <div class="deal-cell value-cell" id="deal-percent-3r">-</div>
+                    <div class="deal-cell value-cell" id="deal-percent-5r">-</div>
+                    <div class="deal-cell row-label deal-row-last">Net %</div>
+                    <div class="deal-cell net-cell deal-row-last" id="deal-net-2r">-</div>
+                    <div class="deal-cell net-cell deal-row-last" id="deal-net-3r">-</div>
+                    <div class="deal-cell net-cell deal-row-last" id="deal-net-5r">-</div>
                 </div>
             </div>
         </div>

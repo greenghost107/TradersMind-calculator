@@ -49,7 +49,21 @@ class TradersMindApp {
             longBtn: document.getElementById('long-btn'),
             shortBtn: document.getElementById('short-btn'),
             riskSharesLabel: document.getElementById('risk-shares-label'),
-            maxSharesLabel: document.getElementById('max-shares-label')
+            maxSharesLabel: document.getElementById('max-shares-label'),
+
+            executedDealBtn: document.getElementById('executed-deal-btn'),
+            dealSection: document.getElementById('executed-deal-section'),
+            dealCommission: document.getElementById('deal-commission'),
+            dealRValue: document.getElementById('deal-r-value'),
+            dealTarget2r: document.getElementById('deal-target-2r'),
+            dealTarget3r: document.getElementById('deal-target-3r'),
+            dealTarget5r: document.getElementById('deal-target-5r'),
+            dealPercent2r: document.getElementById('deal-percent-2r'),
+            dealPercent3r: document.getElementById('deal-percent-3r'),
+            dealPercent5r: document.getElementById('deal-percent-5r'),
+            dealNet2r: document.getElementById('deal-net-2r'),
+            dealNet3r: document.getElementById('deal-net-3r'),
+            dealNet5r: document.getElementById('deal-net-5r')
         };
     }
 
@@ -89,6 +103,21 @@ class TradersMindApp {
         window.addEventListener('beforeunload', () => {
             this.saveCurrentState();
         });
+
+        if (this.elements.executedDealBtn) {
+            this.elements.executedDealBtn.addEventListener('click', () => this.toggleExecutedDeal());
+        }
+
+        if (this.elements.dealCommission) {
+            this.elements.dealCommission.addEventListener('input', this.debounce(() => {
+                this.saveCommission();
+                this.handleInputChange();
+            }, 300));
+            this.elements.dealCommission.addEventListener('change', () => {
+                this.saveCommission();
+                this.handleInputChange();
+            });
+        }
     }
 
     setupAccessibility() {
@@ -223,6 +252,8 @@ class TradersMindApp {
         this.updateResultColors(result);
         this.updatePositionIndicators();
 
+        this.renderExecutedDeal(result);
+
         // Dispatch calculation complete event for PWA engagement tracking
         document.dispatchEvent(new CustomEvent('calculation-complete', {
             detail: { result: result }
@@ -307,12 +338,87 @@ class TradersMindApp {
         console.error(message);
     }
 
+    toggleExecutedDeal() {
+        const isHidden = this.elements.dealSection.classList.contains('hidden');
+        this.elements.dealSection.classList.toggle('hidden', !isHidden);
+        this.elements.executedDealBtn.classList.toggle('active', isHidden);
+        this.elements.executedDealBtn.setAttribute('aria-pressed', isHidden);
+
+        if (isHidden) {
+            this.handleInputChange();
+        }
+    }
+
+    saveCommission() {
+        const commission = parseFloat(this.elements.dealCommission.value);
+        if (!isNaN(commission) && commission >= 0) {
+            this.storage.saveSettings({ defaultCommission: commission });
+        }
+    }
+
+    loadCommission() {
+        const settings = this.storage.loadSettings();
+        if (this.elements.dealCommission && settings.defaultCommission !== undefined) {
+            this.elements.dealCommission.value = settings.defaultCommission;
+        }
+    }
+
+    renderExecutedDeal(result) {
+        if (!this.elements.dealSection || this.elements.dealSection.classList.contains('hidden')) return;
+
+        if (!result || result.errors) {
+            this.clearExecutedDeal();
+            return;
+        }
+
+        const inputs = this.getInputValues();
+        const commission = parseFloat(this.elements.dealCommission.value) || 0.35;
+        const dealResult = this.calculator.calculateExecutedDeal(
+            inputs.entryPrice,
+            inputs.stopLoss,
+            inputs.positionType,
+            result.riskShares,
+            commission
+        );
+
+        if (!dealResult) {
+            this.clearExecutedDeal();
+            return;
+        }
+
+        this.elements.dealRValue.textContent = dealResult.formatted.R;
+
+        const [r2, r3, r5] = dealResult.targets;
+        this.elements.dealTarget2r.textContent = r2.formatted.targetPrice;
+        this.elements.dealTarget3r.textContent = r3.formatted.targetPrice;
+        this.elements.dealTarget5r.textContent = r5.formatted.targetPrice;
+
+        this.elements.dealPercent2r.textContent = r2.formatted.grossPercent;
+        this.elements.dealPercent3r.textContent = r3.formatted.grossPercent;
+        this.elements.dealPercent5r.textContent = r5.formatted.grossPercent;
+
+        this.elements.dealNet2r.textContent = r2.formatted.netPercent;
+        this.elements.dealNet3r.textContent = r3.formatted.netPercent;
+        this.elements.dealNet5r.textContent = r5.formatted.netPercent;
+    }
+
+    clearExecutedDeal() {
+        const dealElements = [
+            this.elements.dealTarget2r, this.elements.dealTarget3r, this.elements.dealTarget5r,
+            this.elements.dealPercent2r, this.elements.dealPercent3r, this.elements.dealPercent5r,
+            this.elements.dealNet2r, this.elements.dealNet3r, this.elements.dealNet5r
+        ];
+        dealElements.forEach(el => { if (el) el.textContent = '-'; });
+        if (this.elements.dealRValue) this.elements.dealRValue.textContent = '-';
+    }
+
     loadSavedData() {
         const calculationData = this.storage.loadCalculationData();
         if (calculationData) {
             this.restoreCalculationInputs(calculationData);
         }
 
+        this.loadCommission();
         this.calculate();
     }
 

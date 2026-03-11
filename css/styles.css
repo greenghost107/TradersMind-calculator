@@ -359,6 +359,197 @@ header h1 {
     font-size: 0.875rem;
 }
 
+/* Header Right Group */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Executed Deal Button */
+.executed-deal-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    cursor: pointer;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: background-color 0.2s, border-color 0.2s;
+    min-height: 36px;
+    white-space: nowrap;
+}
+
+.executed-deal-btn:hover,
+.executed-deal-btn:focus {
+    background-color: rgba(255, 255, 255, 0.25);
+    outline: none;
+}
+
+.executed-deal-btn:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.executed-deal-btn.active {
+    background-color: rgba(76, 175, 80, 0.35);
+    border-color: rgba(76, 175, 80, 0.7);
+}
+
+/* Executed Deal Section */
+.deal-section {
+    background-color: #2a2a2a;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid #4caf50;
+}
+
+.deal-section.hidden {
+    display: none;
+}
+
+.deal-section h3 {
+    font-size: 1.125rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    border-bottom: 2px solid #444;
+    padding-bottom: 0.5rem;
+}
+
+.deal-commission-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.deal-commission-row label {
+    margin: 0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #e0e0e0;
+}
+
+.deal-commission-row input {
+    width: 100px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    min-height: 36px;
+}
+
+.deal-r-info {
+    background-color: #333;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+    font-size: 0.875rem;
+    color: #b0b0b0;
+}
+
+.deal-r-info strong {
+    color: #2196f3;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Deal Table Grid */
+.deal-table {
+    overflow-x: auto;
+}
+
+.deal-grid {
+    display: grid;
+    grid-template-columns: auto repeat(3, 1fr);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #444;
+    min-width: 260px;
+}
+
+.deal-cell {
+    padding: 0.625rem 0.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #3a3a3a;
+    border-right: 1px solid #3a3a3a;
+}
+
+.deal-cell:nth-child(4n) {
+    border-right: none;
+}
+
+.deal-row-last.deal-cell {
+    border-bottom: none;
+}
+
+.deal-cell.header-cell {
+    background-color: #1e1e1e;
+    font-weight: 700;
+    color: #2196f3;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.deal-cell.row-label {
+    background-color: #252525;
+    font-weight: 600;
+    color: #b0b0b0;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    padding-left: 0.75rem;
+}
+
+.deal-cell.value-cell {
+    background-color: #2e2e2e;
+    color: #4caf50;
+    font-weight: 600;
+}
+
+.deal-cell.net-cell {
+    background-color: #2a2a2a;
+    color: #ff9800;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+    .deal-section {
+        padding: 1rem;
+    }
+
+    .deal-cell {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .deal-cell.row-label {
+        font-size: 0.7rem;
+        padding-left: 0.5rem;
+    }
+
+    .deal-cell.net-cell {
+        font-size: 0.7rem;
+    }
+
+    .deal-commission-row input {
+        width: 80px;
+    }
+}
+
 /* Main Content */
 main {
     max-width: 480px;

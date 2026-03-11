@@ -5,7 +5,8 @@ class StorageManager {
         this.defaultSettings = {
             accountSize: 10000,
             maxPositionPercent: 6,
-            theme: 'dark'
+            theme: 'dark',
+            defaultCommission: 0.35
         };
     }
 
@@ -130,7 +131,10 @@ class StorageManager {
             const validatedSettings = {
                 accountSize: this.validateAccountSize(settings.accountSize),
                 maxPositionPercent: this.validateMaxPositionPercent(settings.maxPositionPercent),
-                theme: settings.theme || this.defaultSettings.theme
+                theme: settings.theme || this.defaultSettings.theme,
+                defaultCommission: settings.defaultCommission !== undefined
+                    ? (parseFloat(settings.defaultCommission) || this.defaultSettings.defaultCommission)
+                    : this.defaultSettings.defaultCommission
             };
 
             return validatedSettings;
