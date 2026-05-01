@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tradersmind-calculator-v5';
-const STATIC_CACHE_NAME = 'tradersmind-static-v5';
+const CACHE_NAME = 'tradersmind-calculator-v6';
+const STATIC_CACHE_NAME = 'tradersmind-static-v6';
 
 // Get the base path dynamically
 const getBasePath = () => {
@@ -18,7 +18,7 @@ const STATIC_ASSETS = [
   BASE_PATH + 'js/calculator.js',
   BASE_PATH + 'js/storage.js',
   BASE_PATH + 'js/pwaInstallManager.js',
-  BASE_PATH + 'js/install.js',
+  BASE_PATH + 'js/install.js',h
   BASE_PATH + 'manifest.json'
 ];
 
