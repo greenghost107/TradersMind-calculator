@@ -864,6 +864,12 @@ select {
     font-style: italic;
 }
 
+.result-subtitle.warning {
+    color: #ff9800;
+    font-style: normal;
+    font-weight: 600;
+}
+
 .validation-display {
     background-color: #333;
     border-radius: 8px;

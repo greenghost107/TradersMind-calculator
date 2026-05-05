@@ -70,30 +70,32 @@ class PositionCalculator {
 
     calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent, maxPositions) {
         const riskPerShare = Math.abs(entryPrice - stopLoss);
-        if (riskPerShare === 0) return { shares: 0, constrainedByPositions: false };
+        if (riskPerShare === 0) return { shares: 0, exceedsPositionLimit: false, cappedByCapital: false };
 
-        // Method 1: (Portfolio × Risk%) / Stop%
         const portfolioRisk = accountSize * (riskPercent / 100);
         const stopLossPercent = (riskPerShare / entryPrice) * 100;
-        
-        if (stopLossPercent === 0) return { shares: 0, constrainedByPositions: false };
-        
+
+        if (stopLossPercent === 0) return { shares: 0, exceedsPositionLimit: false, cappedByCapital: false };
+
         const riskBasedPositionValue = portfolioRisk / (stopLossPercent / 100);
         const riskBasedShares = Math.floor(riskBasedPositionValue / entryPrice);
-        
-        // Method 2: Portfolio / Max Positions
-        const maxPositionValue = accountSize / maxPositions;
-        const positionLimitShares = Math.floor(maxPositionValue / entryPrice);
-        
-        // Use MIN of both methods
-        const finalShares = Math.min(riskBasedShares, positionLimitShares);
-        const constrainedByPositions = finalShares === positionLimitShares && riskBasedShares > positionLimitShares;
-        
-        return { 
-            shares: Math.max(0, finalShares),
-            constrainedByPositions: constrainedByPositions,
-            riskBasedShares: riskBasedShares,
-            positionLimitShares: positionLimitShares
+
+        // Hard ceiling: never use more than 95% of capital on a single trade
+        const maxSharesByCapital = Math.floor((accountSize * 0.95) / entryPrice);
+
+        // Diversification reference: 1/N slot — advisory only, no longer caps shares
+        const positionLimitShares = Math.floor((accountSize / maxPositions) / entryPrice);
+
+        const finalShares = Math.max(0, Math.min(riskBasedShares, maxSharesByCapital));
+        const exceedsPositionLimit = finalShares > positionLimitShares;
+        const cappedByCapital = riskBasedShares > maxSharesByCapital;
+
+        return {
+            shares: finalShares,
+            exceedsPositionLimit,
+            cappedByCapital,
+            riskBasedShares,
+            positionLimitShares
         };
     }
 
@@ -159,14 +161,25 @@ class PositionCalculator {
         const portfolioRisk = accountSize * (riskPercent / 100);
         const riskPerShare = Math.abs(entryPrice - stopLoss);
         const stopLossPercent = (riskPerShare / entryPrice) * 100;
-        const maxPositionValue = accountSize / maxPositions;
-        
+        const capitalCeiling = accountSize * 0.95;
+        const positionLimitValue = accountSize / maxPositions;
+
         const riskBasedPositionValue = portfolioRisk / (stopLossPercent / 100);
-        
+        const effectiveValue = Math.min(riskBasedPositionValue, capitalCeiling);
+
+        let resultAnnotation;
+        if (riskResult.cappedByCapital) {
+            resultAnnotation = '(capped by 95% capital ceiling)';
+        } else if (riskResult.exceedsPositionLimit) {
+            resultAnnotation = `(risk-based — exceeds 1/${maxPositions} slot: ${riskResult.positionLimitShares} shares)`;
+        } else {
+            resultAnnotation = '(risk-based)';
+        }
+
         return {
-            formula: `Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]`,
-            calculation: `MIN[$${riskBasedPositionValue.toLocaleString()}, $${maxPositionValue.toLocaleString()}] = $${Math.min(riskBasedPositionValue, maxPositionValue).toLocaleString()}`,
-            result: `${riskResult.shares} shares ${riskResult.constrainedByPositions ? '(limited by max positions)' : '(risk-based)'}`
+            formula: `Position Size = MIN[(Portfolio × Risk%) / Stop%, 0.95 × Portfolio / Entry]`,
+            calculation: `MIN[$${riskBasedPositionValue.toLocaleString(undefined, {maximumFractionDigits: 0})}, $${capitalCeiling.toLocaleString(undefined, {maximumFractionDigits: 0})}] = $${effectiveValue.toLocaleString(undefined, {maximumFractionDigits: 0})} | 1/${maxPositions} slot: $${positionLimitValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`,
+            result: `${riskResult.shares} shares ${resultAnnotation}`
         };
     }
 
@@ -340,7 +353,9 @@ class PositionCalculator {
             riskPositionPercentage,
             riskDollarRiskAmount,
             riskRiskPercentOfAccount,
-            riskConstrainedByPositions: riskResult.constrainedByPositions,
+            riskExceedsPositionLimit: riskResult.exceedsPositionLimit,
+            riskCappedByCapital: riskResult.cappedByCapital,
+            riskPositionLimitShares: riskResult.positionLimitShares,
             
             // Common values
             riskPerShare,

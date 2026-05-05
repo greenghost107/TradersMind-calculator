@@ -102,6 +102,13 @@ class TradersMindApp {
             this.saveCurrentState();
         });
 
+        // Hide executed deal when entry price or stop loss changes
+        [this.elements.entryPrice, this.elements.stopLoss].forEach(el => {
+            if (el) {
+                el.addEventListener('input', () => this.hideExecutedDeal());
+            }
+        });
+
         if (this.elements.executedDealBtn) {
             this.elements.executedDealBtn.addEventListener('click', () => this.toggleExecutedDeal());
         }
@@ -229,7 +236,15 @@ class TradersMindApp {
 
         // Show/hide constraint label
         if (this.elements.riskConstraintLabel) {
-            if (result.riskConstrainedByPositions) {
+            if (result.riskCappedByCapital) {
+                this.elements.riskConstraintLabel.textContent = '⚠ Capped by 95% capital ceiling';
+                this.elements.riskConstraintLabel.className = 'result-subtitle warning';
+                this.elements.riskConstraintLabel.style.display = 'block';
+            } else if (result.riskExceedsPositionLimit) {
+                const N = result.maxPositions;
+                const slot = result.riskPositionLimitShares;
+                this.elements.riskConstraintLabel.textContent = `⚠ Exceeds 1/${N} diversification slot (${slot} shares)`;
+                this.elements.riskConstraintLabel.className = 'result-subtitle warning';
                 this.elements.riskConstraintLabel.style.display = 'block';
             } else {
                 this.elements.riskConstraintLabel.style.display = 'none';
@@ -348,6 +363,14 @@ class TradersMindApp {
 
         if (isHidden) {
             this.handleInputChange();
+        }
+    }
+
+    hideExecutedDeal() {
+        if (this.elements.dealSection && !this.elements.dealSection.classList.contains('hidden')) {
+            this.elements.dealSection.classList.add('hidden');
+            this.elements.executedDealBtn.classList.remove('active');
+            this.elements.executedDealBtn.setAttribute('aria-pressed', 'false');
         }
     }
 

@@ -157,7 +157,7 @@
                     <div class="result-card shares-to-buy-card">
                         <h4 id="risk-shares-label">Shares to Buy</h4>
                         <div id="risk-shares-to-buy" class="result-value">-</div>
-                        <div id="risk-constraint-label" class="result-subtitle" style="display: none;">Limited by max positions</div>
+                        <div id="risk-constraint-label" class="result-subtitle" style="display: none;"></div>
                     </div>
                     <div class="result-card">
                         <h4>Portfolio Risk (%)</h4>
@@ -257,11 +257,11 @@
                     <div id="position-sizing-formula" class="formula-text">Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]</div>
                 </div>
                 <div class="formula-explanation">
-                    <p><strong>MIN Risk-Based Position Sizing:</strong></p>
-                    <p>This formula calculates position size using the minimum of two methods: risk-based sizing and portfolio diversification limits. It ensures you don't risk more than your tolerance while maintaining portfolio diversification.</p>
-                    <p><strong>Method 1:</strong> (Portfolio × Risk%) / Stop% - Size based on risk tolerance</p>
-                    <p><strong>Method 2:</strong> Portfolio / Max Positions - Size based on diversification</p>
-                    <p>The system uses whichever method gives the smaller position size for safety.</p>
+                    <p><strong>Risk-Based Position Sizing:</strong></p>
+                    <p>Position size is driven by your risk tolerance. The 1/N diversification slot is shown as a reference — a warning appears when the risk-based size exceeds it, but it no longer caps your shares.</p>
+                    <p><strong>Primary:</strong> (Portfolio × Risk%) / Stop% — size based on your chosen risk %</p>
+                    <p><strong>Hard ceiling:</strong> 0.95 × Portfolio / Entry — prevents using more than 95% of capital on one trade</p>
+                    <p><strong>Diversification check:</strong> Portfolio / Max Positions — advisory 1/N slot shown for reference</p>
                 </div>
                 <div class="result-group">
                     <div class="result-card">
