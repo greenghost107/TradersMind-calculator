@@ -236,8 +236,8 @@ class TradersMindApp {
 
         // Show/hide constraint label
         if (this.elements.riskConstraintLabel) {
-            if (result.riskCappedByCapital) {
-                this.elements.riskConstraintLabel.textContent = '⚠ Capped by 95% capital ceiling';
+            if (result.riskCappedByMaxPosition) {
+                this.elements.riskConstraintLabel.textContent = '⚠ Capped at 25% of account';
                 this.elements.riskConstraintLabel.className = 'result-subtitle warning';
                 this.elements.riskConstraintLabel.style.display = 'block';
             } else if (result.riskExceedsPositionLimit) {
