@@ -104,6 +104,27 @@ test('reset returns to the suggested value', async ({ page }) => {
   await expect(page.locator('#risk-suggested-label')).toBeHidden();
 });
 
+test('header Reset button appears only while overridden and resets shares', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(500);
+
+  await fillInputs(page, EXAMPLE);
+
+  // Hidden until an override is active
+  await expect(page.locator('#reset-shares-btn')).toBeHidden();
+
+  await setOverride(page, 22);
+  await expect(page.locator('#reset-shares-btn')).toBeVisible();
+  await expect(page.locator('#risk-shares-to-buy')).toHaveText('22');
+
+  await page.click('#reset-shares-btn');
+  await page.waitForTimeout(400);
+
+  await expect(page.locator('#risk-shares-to-buy')).toHaveText('23');
+  await expect(page.locator('#reset-shares-btn')).toBeHidden();
+});
+
 test('override resets when entry price changes', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');

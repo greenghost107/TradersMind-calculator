@@ -38,6 +38,7 @@ class TradersMindApp {
             riskConstraintLabel: document.getElementById('risk-constraint-label'),
             riskSuggestedLabel: document.getElementById('risk-suggested-label'),
             editSharesBtn: document.getElementById('edit-shares-btn'),
+            resetSharesBtn: document.getElementById('reset-shares-btn'),
             sharesOverrideRow: document.getElementById('shares-override-row'),
             sharesOverrideInput: document.getElementById('shares-override-input'),
             sharesOverrideReset: document.getElementById('shares-override-reset'),
@@ -132,6 +133,9 @@ class TradersMindApp {
         }
         if (this.elements.sharesOverrideReset) {
             this.elements.sharesOverrideReset.addEventListener('click', () => this.resetSharesOverride());
+        }
+        if (this.elements.resetSharesBtn) {
+            this.elements.resetSharesBtn.addEventListener('click', () => this.resetSharesOverride());
         }
 
         if (this.elements.executedDealBtn) {
@@ -302,7 +306,7 @@ class TradersMindApp {
         this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
         this.elements.riskRiskPerShare.textContent = result.formatted.riskPerShare;
 
-        // Show the suggested baseline when a manual override is active
+        // Show the suggested baseline and header Reset button when a manual override is active
         if (this.elements.riskSuggestedLabel) {
             if (result.riskSharesOverridden) {
                 this.elements.riskSuggestedLabel.textContent = `Suggested: ${result.formatted.suggestedRiskShares}`;
@@ -310,6 +314,9 @@ class TradersMindApp {
             } else {
                 this.elements.riskSuggestedLabel.style.display = 'none';
             }
+        }
+        if (this.elements.resetSharesBtn) {
+            this.elements.resetSharesBtn.classList.toggle('hidden', !result.riskSharesOverridden);
         }
 
         // Show/hide constraint label (describes the suggestion; hidden while overridden)
@@ -425,6 +432,10 @@ class TradersMindApp {
         // Hide suggested-override label (override state itself is left intact)
         if (this.elements.riskSuggestedLabel) {
             this.elements.riskSuggestedLabel.style.display = 'none';
+        }
+        // Hide the header Reset button
+        if (this.elements.resetSharesBtn) {
+            this.elements.resetSharesBtn.classList.add('hidden');
         }
     }
 

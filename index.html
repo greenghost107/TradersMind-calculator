@@ -154,9 +154,13 @@
             <div class="result-section">
                 <h3 class="result-section-header">
                     <span>💰 Risk Calculation</span>
-                    <button id="edit-shares-btn" class="edit-shares-btn"
-                            aria-label="Edit number of shares"
-                            aria-pressed="false">✏️ Edit</button>
+                    <span class="shares-header-actions">
+                        <button id="edit-shares-btn" class="edit-shares-btn"
+                                aria-label="Edit number of shares"
+                                aria-pressed="false">✏️ Edit</button>
+                        <button id="reset-shares-btn" class="edit-shares-btn hidden"
+                                aria-label="Reset shares to suggested value">↺ Reset</button>
+                    </span>
                 </h3>
                 <div id="shares-override-row" class="shares-override-row hidden">
                     <label for="shares-override-input">Shares</label>

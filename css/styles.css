@@ -781,6 +781,16 @@ select {
     gap: 0.5rem;
 }
 
+.shares-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.edit-shares-btn.hidden {
+    display: none;
+}
+
 .edit-shares-btn {
     font-size: 0.75rem;
     font-weight: 600;
