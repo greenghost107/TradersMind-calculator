@@ -774,6 +774,91 @@ select {
     padding-bottom: 0.5rem;
 }
 
+.result-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.edit-shares-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    background-color: #333;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.edit-shares-btn:hover {
+    background-color: #3d3d3d;
+    border-color: #2196f3;
+}
+
+.edit-shares-btn.active {
+    background-color: #2196f3;
+    border-color: #2196f3;
+    color: #fff;
+}
+
+.shares-override-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #333;
+    border: 1px solid #444;
+    border-radius: 8px;
+}
+
+.shares-override-row.hidden {
+    display: none;
+}
+
+.shares-override-row label {
+    font-size: 0.75rem;
+    color: #b0b0b0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.shares-override-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    background-color: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1rem;
+}
+
+.shares-override-row input:focus {
+    outline: none;
+    border-color: #2196f3;
+}
+
+.shares-override-reset {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.shares-override-reset:hover {
+    background-color: #4d4d4d;
+}
+
 .result-group {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));

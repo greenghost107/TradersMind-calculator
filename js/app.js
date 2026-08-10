@@ -4,6 +4,7 @@ class TradersMindApp {
         this.storage = new StorageManager();
         this.elements = {};
         this.isCalculating = false;
+        this.sharesOverride = null;
         
         this.init();
     }
@@ -35,6 +36,11 @@ class TradersMindApp {
             tradeRiskPercent: document.getElementById('trade-risk-percent'),
             riskSharesToBuy: document.getElementById('risk-shares-to-buy'),
             riskConstraintLabel: document.getElementById('risk-constraint-label'),
+            riskSuggestedLabel: document.getElementById('risk-suggested-label'),
+            editSharesBtn: document.getElementById('edit-shares-btn'),
+            sharesOverrideRow: document.getElementById('shares-override-row'),
+            sharesOverrideInput: document.getElementById('shares-override-input'),
+            sharesOverrideReset: document.getElementById('shares-override-reset'),
             riskTotalPositionValue: document.getElementById('risk-total-position-value'),
             riskPositionPercentage: document.getElementById('risk-position-percentage'),
             riskRiskPerShare: document.getElementById('risk-risk-per-share'),
@@ -102,12 +108,31 @@ class TradersMindApp {
             this.saveCurrentState();
         });
 
-        // Hide executed deal when entry price or stop loss changes
+        // Hide executed deal and reset the manual share override when entry/stop changes
+        // (these redefine risk-per-share, so a fixed share count no longer applies).
         [this.elements.entryPrice, this.elements.stopLoss].forEach(el => {
             if (el) {
-                el.addEventListener('input', () => this.hideExecutedDeal());
+                el.addEventListener('input', () => {
+                    this.hideExecutedDeal();
+                    this.resetSharesOverride();
+                });
             }
         });
+
+        // Manual share override controls
+        if (this.elements.editSharesBtn) {
+            this.elements.editSharesBtn.addEventListener('click', () => this.toggleSharesOverrideEditor());
+        }
+        if (this.elements.sharesOverrideInput) {
+            this.elements.sharesOverrideInput.addEventListener('input', this.debounce(() => {
+                const value = parseFloat(this.elements.sharesOverrideInput.value);
+                this.sharesOverride = (!isNaN(value) && value >= 0) ? value : null;
+                this.handleInputChange();
+            }, 300));
+        }
+        if (this.elements.sharesOverrideReset) {
+            this.elements.sharesOverrideReset.addEventListener('click', () => this.resetSharesOverride());
+        }
 
         if (this.elements.executedDealBtn) {
             this.elements.executedDealBtn.addEventListener('click', () => this.toggleExecutedDeal());
@@ -210,8 +235,49 @@ class TradersMindApp {
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
             maxPositions: parseInt(this.elements.maxPositions.value) || 10,
             riskPercent: parseFloat(this.elements.riskPercent.value) || 1.0,
-            positionType: this.getPositionType()
+            positionType: this.getPositionType(),
+            riskSharesOverride: this.sharesOverride
         };
+    }
+
+    toggleSharesOverrideEditor() {
+        const row = this.elements.sharesOverrideRow;
+        if (!row) return;
+
+        const willOpen = row.classList.contains('hidden');
+        row.classList.toggle('hidden', !willOpen);
+        this.elements.editSharesBtn.classList.toggle('active', willOpen);
+        this.elements.editSharesBtn.setAttribute('aria-pressed', willOpen);
+
+        if (willOpen && this.elements.sharesOverrideInput) {
+            // Prefill with the current value (override if set, otherwise the suggested count)
+            const current = this.elements.riskSharesToBuy.textContent.replace(/,/g, '');
+            if (current && current !== '-') {
+                this.elements.sharesOverrideInput.value = current;
+            }
+            this.elements.sharesOverrideInput.focus();
+            this.elements.sharesOverrideInput.select();
+        }
+    }
+
+    resetSharesOverride() {
+        if (this.sharesOverride === null &&
+            (!this.elements.sharesOverrideRow || this.elements.sharesOverrideRow.classList.contains('hidden'))) {
+            return;
+        }
+
+        this.sharesOverride = null;
+        if (this.elements.sharesOverrideInput) {
+            this.elements.sharesOverrideInput.value = '';
+        }
+        if (this.elements.sharesOverrideRow) {
+            this.elements.sharesOverrideRow.classList.add('hidden');
+        }
+        if (this.elements.editSharesBtn) {
+            this.elements.editSharesBtn.classList.remove('active');
+            this.elements.editSharesBtn.setAttribute('aria-pressed', 'false');
+        }
+        this.handleInputChange();
     }
 
     updateRiskPercentDisplay() {
@@ -226,17 +292,31 @@ class TradersMindApp {
 
     displayResults(result) {
         // Risk Calculation section (risk-based calculation with MIN logic) - Now at top
-        this.elements.portfolioRiskPercent.textContent = result.formatted.portfolioRiskPercent;
-        this.elements.portfolioRiskAmount.textContent = result.formatted.portfolioRiskAmount;
+        // Portfolio Risk cards show the ACTUAL realized risk of the chosen share count,
+        // so they follow a manual override rather than the flat slider budget.
+        this.elements.portfolioRiskPercent.textContent = result.formatted.riskRiskPercentOfAccount;
+        this.elements.portfolioRiskAmount.textContent = result.formatted.riskDollarRiskAmount;
         this.elements.tradeRiskPercent.textContent = result.formatted.tradeRiskPercent;
         this.elements.riskSharesToBuy.textContent = result.formatted.riskShares;
         this.elements.riskTotalPositionValue.textContent = result.formatted.riskTotalPositionValue;
         this.elements.riskPositionPercentage.textContent = result.formatted.riskPositionPercentage;
         this.elements.riskRiskPerShare.textContent = result.formatted.riskPerShare;
 
-        // Show/hide constraint label
+        // Show the suggested baseline when a manual override is active
+        if (this.elements.riskSuggestedLabel) {
+            if (result.riskSharesOverridden) {
+                this.elements.riskSuggestedLabel.textContent = `Suggested: ${result.formatted.suggestedRiskShares}`;
+                this.elements.riskSuggestedLabel.style.display = 'block';
+            } else {
+                this.elements.riskSuggestedLabel.style.display = 'none';
+            }
+        }
+
+        // Show/hide constraint label (describes the suggestion; hidden while overridden)
         if (this.elements.riskConstraintLabel) {
-            if (result.riskCappedByMaxPosition) {
+            if (result.riskSharesOverridden) {
+                this.elements.riskConstraintLabel.style.display = 'none';
+            } else if (result.riskCappedByMaxPosition) {
                 this.elements.riskConstraintLabel.textContent = '⚠ Capped at 25% of account';
                 this.elements.riskConstraintLabel.className = 'result-subtitle warning';
                 this.elements.riskConstraintLabel.style.display = 'block';
@@ -341,6 +421,10 @@ class TradersMindApp {
         // Hide constraint label
         if (this.elements.riskConstraintLabel) {
             this.elements.riskConstraintLabel.style.display = 'none';
+        }
+        // Hide suggested-override label (override state itself is left intact)
+        if (this.elements.riskSuggestedLabel) {
+            this.elements.riskSuggestedLabel.style.display = 'none';
         }
     }
 

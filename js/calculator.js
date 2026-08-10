@@ -304,7 +304,8 @@ class PositionCalculator {
             maxPositions,
             atrPercent,
             riskPercent,
-            positionType = 'long'
+            positionType = 'long',
+            riskSharesOverride = null
         } = inputs;
 
         const errors = this.validateInputs(entryPrice, stopLoss, accountSize, maxPositions, atrPercent, riskPercent, positionType);
@@ -322,7 +323,11 @@ class PositionCalculator {
         // Risk-based position sizing (for Risk Calculation section)
         const portfolioRisk = this.calculatePortfolioRisk(accountSize, riskPercent);
         const riskResult = this.calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent, maxPositions);
-        const riskShares = riskResult.shares;
+        const suggestedRiskShares = riskResult.shares;
+
+        // Manual override: when set, the chosen share count drives every share-dependent value below.
+        const riskSharesOverridden = riskSharesOverride != null && !isNaN(riskSharesOverride) && riskSharesOverride >= 0;
+        const riskShares = riskSharesOverridden ? riskSharesOverride : suggestedRiskShares;
         const riskTotalPositionValue = riskShares * entryPrice;
         const riskPositionPercentage = this.calculatePositionPercentage(riskTotalPositionValue, accountSize);
         const riskDollarRiskAmount = this.calculateRiskAmount(entryPrice, stopLoss, riskShares);
@@ -350,6 +355,8 @@ class PositionCalculator {
             
             // Risk-based position sizing (Risk Calculation section)
             riskShares,
+            suggestedRiskShares,
+            riskSharesOverridden,
             riskTotalPositionValue,
             riskPositionPercentage,
             riskDollarRiskAmount,
@@ -381,6 +388,7 @@ class PositionCalculator {
                 
                 // Risk-based position sizing
                 riskShares: this.formatShares(riskShares),
+                suggestedRiskShares: this.formatShares(suggestedRiskShares),
                 riskTotalPositionValue: this.formatCurrency(riskTotalPositionValue),
                 riskPositionPercentage: `${riskPositionPercentage.toFixed(2)}%`,
                 riskDollarRiskAmount: this.formatCurrency(riskDollarRiskAmount),

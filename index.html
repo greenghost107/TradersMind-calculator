@@ -152,12 +152,24 @@
 
         <div class="results-section">
             <div class="result-section">
-                <h3>💰 Risk Calculation</h3>
+                <h3 class="result-section-header">
+                    <span>💰 Risk Calculation</span>
+                    <button id="edit-shares-btn" class="edit-shares-btn"
+                            aria-label="Edit number of shares"
+                            aria-pressed="false">✏️ Edit</button>
+                </h3>
+                <div id="shares-override-row" class="shares-override-row hidden">
+                    <label for="shares-override-input">Shares</label>
+                    <input type="number" id="shares-override-input" min="0" step="any"
+                           inputmode="decimal" aria-label="Override number of shares">
+                    <button id="shares-override-reset" class="shares-override-reset">Reset</button>
+                </div>
                 <div class="result-group">
                     <div class="result-card shares-to-buy-card">
                         <h4 id="risk-shares-label">Shares to Buy</h4>
                         <div id="risk-shares-to-buy" class="result-value">-</div>
                         <div id="risk-constraint-label" class="result-subtitle" style="display: none;"></div>
+                        <div id="risk-suggested-label" class="result-subtitle" style="display: none;"></div>
                     </div>
                     <div class="result-card">
                         <h4>Portfolio Risk (%)</h4>
