@@ -172,7 +172,7 @@ test('% gain values are correct for long position', async ({ page }) => {
   await expect(page.locator('#deal-percent-5r')).toContainText('25.00%');
 });
 
-// Test 12: Short position — target prices go below entry
+// Test 12: Short position - target prices go below entry
 test('target prices go below entry for short position', async ({ page }) => {
   await page.goto('/');
   await page.waitForLoadState('networkidle');

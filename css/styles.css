@@ -997,6 +997,84 @@ select {
     color: #ff9800;
 }
 
+.result-value.blocked {
+    color: #777;
+}
+
+.input-help-text {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.4rem;
+    line-height: 1.4;
+}
+
+.input-help-text.warning {
+    color: #ff9800;
+    font-weight: 600;
+}
+
+.input-help-text.hidden {
+    display: none;
+}
+
+.final-stop-display {
+    text-align: center;
+    background-color: #333;
+    border-radius: 8px;
+    padding: 1.25rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #444;
+}
+
+.final-stop-display h4 {
+    font-size: 0.75rem;
+    color: #b0b0b0;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.final-stop-value {
+    font-size: 2.25rem !important;
+    font-weight: 700 !important;
+}
+
+.gate-message {
+    border-radius: 8px;
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+    border: 1px solid;
+}
+
+.gate-message.hidden {
+    display: none;
+}
+
+.gate-message.block {
+    color: #f44336;
+    background-color: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.4);
+}
+
+.gate-message.warn {
+    color: #ff9800;
+    background-color: rgba(255, 152, 0, 0.1);
+    border-color: rgba(255, 152, 0, 0.4);
+}
+
+.result-group.hidden {
+    display: none;
+}
+
+#executed-deal-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 
 /* Install FAB */
 .install-fab {

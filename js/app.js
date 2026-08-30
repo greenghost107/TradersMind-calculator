@@ -47,11 +47,15 @@ class TradersMindApp {
             riskRiskPerShare: document.getElementById('risk-risk-per-share'),
             positionSizingFormula: document.getElementById('position-sizing-formula'),
             formulaResult: document.getElementById('formula-result'),
-            atrSharesDisplay: document.getElementById('atr-shares-display'),
-            atrPositionValueDisplay: document.getElementById('atr-position-value-display'),
-            positionDifference: document.getElementById('position-difference'),
-            volatilityImpact: document.getElementById('volatility-impact'),
-            positionValidation: document.getElementById('position-validation'),
+
+            atrEmptyNotice: document.getElementById('atr-empty-notice'),
+            finalStopValue: document.getElementById('final-stop-value'),
+            gateAMessage: document.getElementById('gate-a-message'),
+            gateBMessage: document.getElementById('gate-b-message'),
+            atrDerivedRows: document.getElementById('atr-derived-rows'),
+            stopDistancePct: document.getElementById('stop-distance-pct'),
+            structuralStopInATR: document.getElementById('structural-stop-in-atr'),
+            finalStopInATR: document.getElementById('final-stop-in-atr'),
 
             longBtn: document.getElementById('long-btn'),
             shortBtn: document.getElementById('short-btn'),
@@ -232,10 +236,11 @@ class TradersMindApp {
     }
 
     getInputValues() {
+        const atrRaw = this.elements.atrPercent.value;
         return {
             entryPrice: parseFloat(this.elements.entryPrice.value) || 0,
             stopLoss: parseFloat(this.elements.stopLoss.value) || 0,
-            atrPercent: parseFloat(this.elements.atrPercent.value) || 5.0,
+            atrPercent: atrRaw === '' ? null : parseFloat(atrRaw),
             accountSize: parseFloat(this.elements.accountSize.value) || 0,
             maxPositions: parseInt(this.elements.maxPositions.value) || 10,
             riskPercent: parseFloat(this.elements.riskPercent.value) || 1.0,
@@ -347,11 +352,31 @@ class TradersMindApp {
         this.elements.positionSizingFormula.textContent = result.positionSizingFormula.calculation;
         this.elements.formulaResult.textContent = result.positionSizingFormula.result;
 
-        this.elements.atrSharesDisplay.textContent = result.formatted.atrShares;
-        this.elements.atrPositionValueDisplay.textContent = result.formatted.atrPositionValue;
-        this.elements.positionDifference.textContent = result.formatted.positionDifference;
-        this.elements.volatilityImpact.textContent = result.formatted.volatilityImpact;
-        this.elements.positionValidation.textContent = result.positionValidation.message;
+        // Final Stop is the number that goes to the broker - always shown, buffered or not.
+        this.elements.finalStopValue.textContent = result.formatted.finalStop;
+
+        if (this.elements.atrEmptyNotice) {
+            this.elements.atrEmptyNotice.classList.toggle('hidden', result.hasATR);
+        }
+
+        if (this.elements.atrDerivedRows) {
+            this.elements.atrDerivedRows.classList.toggle('hidden', !result.hasATR);
+        }
+        if (result.hasATR) {
+            this.elements.stopDistancePct.textContent = result.formatted.stopDistancePct;
+            this.elements.structuralStopInATR.textContent = result.formatted.structuralStopInATR;
+            this.elements.finalStopInATR.textContent = result.formatted.finalStopInATR;
+        }
+
+        this.renderGate(this.elements.gateAMessage, result.gateA);
+        this.renderGate(this.elements.gateBMessage, result.gateB);
+
+        const isBlocked = result.gateA && result.gateA.status === 'block';
+        this.elements.riskSharesToBuy.classList.toggle('blocked', isBlocked);
+        if (this.elements.executedDealBtn) {
+            this.elements.executedDealBtn.disabled = isBlocked;
+            if (isBlocked) this.hideExecutedDeal();
+        }
 
         this.updateResultColors(result);
         this.updatePositionIndicators();
@@ -364,6 +389,21 @@ class TradersMindApp {
         }));
     }
 
+    renderGate(element, gate) {
+        if (!element) return;
+
+        if (!gate || !gate.message) {
+            element.classList.add('hidden');
+            element.textContent = '';
+            return;
+        }
+
+        element.textContent = gate.message;
+        element.classList.remove('hidden');
+        element.classList.toggle('block', gate.status === 'block');
+        element.classList.toggle('warn', gate.status === 'warn');
+    }
+
     updatePositionIndicators() {
         const isShort = this.getPositionType() === 'short';
         document.querySelectorAll('.result-section').forEach(section => {
@@ -373,23 +413,8 @@ class TradersMindApp {
     }
 
     updateResultColors(result) {
-        const validationElement = this.elements.positionValidation;
         const sharesElement = this.elements.sharesToBuy;
-
-        validationElement.className = 'result-value';
         sharesElement.className = 'result-value';
-
-        if (result.positionValidation) {
-            switch (result.positionValidation.status) {
-                case 'optimal':
-                    validationElement.classList.add('positive');
-                    break;
-                case 'tight':
-                case 'wide':
-                    validationElement.classList.add('warning');
-                    break;
-            }
-        }
 
         if (result.originalShares === 0) {
             sharesElement.classList.add('warning');
@@ -411,11 +436,10 @@ class TradersMindApp {
             this.elements.riskRiskPerShare,
             this.elements.positionSizingFormula,
             this.elements.formulaResult,
-            this.elements.atrSharesDisplay,
-            this.elements.atrPositionValueDisplay,
-            this.elements.positionDifference,
-            this.elements.volatilityImpact,
-            this.elements.positionValidation
+            this.elements.finalStopValue,
+            this.elements.stopDistancePct,
+            this.elements.structuralStopInATR,
+            this.elements.finalStopInATR
         ];
 
         resultElements.forEach(element => {
@@ -424,7 +448,7 @@ class TradersMindApp {
                 element.className = 'result-value';
             }
         });
-        
+
         // Hide constraint label
         if (this.elements.riskConstraintLabel) {
             this.elements.riskConstraintLabel.style.display = 'none';
@@ -436,6 +460,15 @@ class TradersMindApp {
         // Hide the header Reset button
         if (this.elements.resetSharesBtn) {
             this.elements.resetSharesBtn.classList.add('hidden');
+        }
+        // Hide gates and ATR-derived rows; disabled state no longer applies
+        this.renderGate(this.elements.gateAMessage, null);
+        this.renderGate(this.elements.gateBMessage, null);
+        if (this.elements.atrDerivedRows) {
+            this.elements.atrDerivedRows.classList.add('hidden');
+        }
+        if (this.elements.executedDealBtn) {
+            this.elements.executedDealBtn.disabled = false;
         }
     }
 
@@ -495,7 +528,7 @@ class TradersMindApp {
         const commission = parseFloat(this.elements.dealCommission.value) || 0.35;
         const dealResult = this.calculator.calculateExecutedDeal(
             inputs.entryPrice,
-            inputs.stopLoss,
+            result.finalStop,
             inputs.positionType,
             result.riskShares,
             commission

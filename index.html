@@ -102,10 +102,16 @@
             </div>
 
             <div class="input-group">
-                <label for="stop-loss">Stop Loss ($) *</label>
+                <label for="stop-loss">Structural Stop ($) *</label>
                 <input type="number" id="stop-loss" step="0.01" min="0" required>
+                <p class="input-help-text">Base low, EP candle low, or key MA. The raw structure level - the buffer is applied automatically.</p>
             </div>
 
+            <div class="input-group">
+                <label for="atr-percent">ATR (%)</label>
+                <input type="number" id="atr-percent" step="0.01" min="0.01" max="50" placeholder="e.g. 6.33">
+                <p id="atr-empty-notice" class="input-help-text warning">No ATR entered - stop is unbuffered and sizing may be roughly double the correct amount.</p>
+            </div>
 
             <div class="input-group">
                 <label for="risk-percent">Risk % of Account</label>
@@ -168,6 +174,16 @@
                            inputmode="decimal" aria-label="Override number of shares">
                     <button id="shares-override-reset" class="shares-override-reset">Reset</button>
                 </div>
+
+                <div class="final-stop-display">
+                    <h4>Final Stop</h4>
+                    <div id="final-stop-value" class="result-value final-stop-value">-</div>
+                    <div class="result-subtitle">Resting GTC stop order</div>
+                </div>
+
+                <div id="gate-a-message" class="gate-message hidden"></div>
+                <div id="gate-b-message" class="gate-message warn hidden"></div>
+
                 <div class="result-group">
                     <div class="result-card shares-to-buy-card">
                         <h4 id="risk-shares-label">Shares to Buy</h4>
@@ -200,6 +216,21 @@
                         <div id="risk-total-position-value" class="result-value">-</div>
                     </div>
                 </div>
+
+                <div id="atr-derived-rows" class="result-group hidden">
+                    <div class="result-card">
+                        <h4>Stop Distance</h4>
+                        <div id="stop-distance-pct" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Structural Stop in ATR</h4>
+                        <div id="structural-stop-in-atr" class="result-value">-</div>
+                    </div>
+                    <div class="result-card">
+                        <h4>Final Stop in ATR</h4>
+                        <div id="final-stop-in-atr" class="result-value">-</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Total Max Position -->
@@ -225,47 +256,6 @@
                 </div>
             </div>
 
-            <!-- ATR-Adjusted Position -->
-            <div class="result-section">
-                <h3>📈 ATR-Adjusted Position</h3>
-                <div class="input-group">
-                    <label for="atr-percent">ATR (%)</label>
-                    <input type="number" id="atr-percent" step="0.1" min="0" value="5.0">
-                </div>
-                <div class="atr-formula-display">
-                    <div id="atr-formula" class="atr-formula-text">
-                        ATR Position Formula<br>
-                        ATR Shares = Risk_calculated_Shares × ATR Multiplier<br>
-                        ATR Position Value = ATR Shares × Entry Price
-                    </div>
-                </div>
-                <div class="result-group">
-                    <div class="result-card">
-                        <h4>ATR-Adjusted Shares</h4>
-                        <div id="atr-shares-display" class="result-value large-value">-</div>
-                        <div class="result-subtitle">Pure risk shares × ATR multiplier</div>
-                    </div>
-                    <div class="result-card">
-                        <h4>ATR Position Value</h4>
-                        <div id="atr-position-value-display" class="result-value large-value">-</div>
-                        <div class="result-subtitle">Total capital for ATR position</div>
-                    </div>
-                    <div class="result-card">
-                        <h4>Position Difference</h4>
-                        <div id="position-difference" class="result-value">-</div>
-                        <div class="result-subtitle">Shares vs pure risk position</div>
-                    </div>
-                    <div class="result-card">
-                        <h4>Volatility Impact</h4>
-                        <div id="volatility-impact" class="result-value">-</div>
-                        <div class="result-subtitle">Position adjustment direction</div>
-                    </div>
-                </div>
-                <div class="validation-display">
-                    <div id="position-validation" class="validation-text">-</div>
-                </div>
-            </div>
-
             <!-- Position Sizing Formula Reference -->
             <div class="result-section">
                 <h3>📐 Position Sizing Formula Reference</h3>
@@ -273,11 +263,15 @@
                     <div id="position-sizing-formula" class="formula-text">Position Size = MIN[(Portfolio × Risk%) / Stop%, Portfolio / Max Positions]</div>
                 </div>
                 <div class="formula-explanation">
-                    <p><strong>Risk-Based Position Sizing:</strong></p>
-                    <p>Position size is driven by your risk tolerance, with a hard cap to prevent over-concentration. The 1/N diversification slot is shown as a reference — a warning appears when the risk-based size exceeds it, but it no longer caps your shares.</p>
-                    <p><strong>Primary:</strong> (Portfolio × Risk%) / Stop% — size based on your chosen risk %</p>
-                    <p><strong>Hard cap:</strong> 25% of account — no single position may exceed this, regardless of risk slider</p>
-                    <p><strong>Diversification check:</strong> Portfolio / Max Positions — advisory 1/N slot shown for reference</p>
+                    <p class="atr-formula-text">
+                        1.&nbsp;&nbsp;ATR$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= ATR% × Entry<br>
+                        2.&nbsp;&nbsp;Final Stop = Structural Stop − (0.5 × ATR$)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[long]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Structural Stop + (0.5 × ATR$)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[short]<br>
+                        3.&nbsp;&nbsp;Risk/Share = |Entry − Final Stop|<br>
+                        4.&nbsp;&nbsp;Shares&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= (Portfolio × Risk%) / Stop Distance%<br>
+                        5.&nbsp;&nbsp;Hard cap&nbsp;&nbsp; = 25% of account
+                    </p>
+                    <p><strong>Volatility enters through the stop distance only.</strong> Share count is never multiplied by an ATR factor.</p>
                 </div>
                 <div class="result-group">
                     <div class="result-card">

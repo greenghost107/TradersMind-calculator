@@ -33,7 +33,7 @@ A comprehensive trading position size calculator designed to help traders manage
 
 2. **Input Trade Parameters**:
    - **Entry Price ($)**: Your planned entry price for the stock
-   - **Position Type**: Toggle between **Long** (default) and **Short** — the calculator validates stop placement and adjusts labels and target prices accordingly
+   - **Position Type**: Toggle between **Long** (default) and **Short** - the calculator validates stop placement and adjusts labels and target prices accordingly
    - **Stop Loss ($)**: Your stop-loss price level (must be below entry for longs, above entry for shorts)
    - **Risk % of Account**: Use the slider to set your risk tolerance (0.1% - 1.5%, default: 1.0%)
 

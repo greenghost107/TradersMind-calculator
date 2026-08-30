@@ -145,7 +145,7 @@ test('shares never exceed 25% of account', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(500);
 
-  // Extremely tight stop with maximum risk — riskBased would be huge
+  // Extremely tight stop with maximum risk - riskBased would be huge
   await fillInputs(page, {
     accountSize: '10000',
     maxPositions: '10',

@@ -22,8 +22,10 @@ class PositionCalculator {
             errors.push('Amount of positions must be between 1 and 50');
         }
 
-        if (atrPercent < 0) {
-            errors.push('ATR percent cannot be negative');
+        if (atrPercent !== null && atrPercent !== undefined && atrPercent !== '') {
+            if (isNaN(atrPercent) || atrPercent <= 0 || atrPercent > 50) {
+                errors.push('ATR percent must be greater than 0 and no more than 50');
+            }
         }
 
         if (!riskPercent || riskPercent < 0.1 || riskPercent > 1.5) {
@@ -83,7 +85,7 @@ class PositionCalculator {
         // Hard cap: a single position must never exceed 25% of the account
         const maxPositionCapShares = Math.floor((accountSize * 0.25) / entryPrice);
 
-        // Diversification reference: 1/N slot — advisory only, no longer caps shares
+        // Diversification reference: 1/N slot - advisory only, no longer caps shares
         const positionLimitShares = Math.floor((accountSize / maxPositions) / entryPrice);
 
         const finalShares = Math.max(0, Math.min(riskBasedShares, maxPositionCapShares));
@@ -135,15 +137,69 @@ class PositionCalculator {
         return ((Math.abs(entryPrice - stopLoss) / entryPrice) * 100);
     }
 
-    validatePositionRange(entryPrice, stopLoss) {
-        const riskPercent = this.calculateStopRiskPercent(entryPrice, stopLoss);
-        if (riskPercent >= 4 && riskPercent <= 5) {
-            return { status: 'optimal', message: '✅ Optimal stop range (4-5%)' };
-        } else if (riskPercent < 4) {
-            return { status: 'tight', message: '⚠️ Stop too tight (<4%)' };
-        } else {
-            return { status: 'wide', message: '❌ Stop too wide (>5%)' };
+    // Buffers the structural stop by half a daily ATR so the exit sits outside normal noise.
+    // Position size is never multiplied by ATR directly - volatility flows in through stop distance only.
+    calculateATRBuffer(entryPrice, structuralStop, atrPercent, positionType = 'long') {
+        const hasATR = atrPercent !== null && atrPercent !== undefined && atrPercent !== '' && !isNaN(atrPercent) && atrPercent > 0;
+        const rawRiskPerShare = Math.abs(entryPrice - structuralStop);
+
+        if (!hasATR) {
+            return {
+                hasATR: false,
+                atrDollars: null,
+                finalStop: structuralStop,
+                riskPerShare: rawRiskPerShare,
+                stopDistancePct: entryPrice > 0 ? (rawRiskPerShare / entryPrice) * 100 : 0,
+                structuralStopInATR: null,
+                finalStopInATR: null
+            };
         }
+
+        const atrDollars = (atrPercent / 100) * entryPrice;
+        const buffer = 0.5 * atrDollars;
+        const finalStop = positionType === 'short' ? structuralStop + buffer : structuralStop - buffer;
+        const riskPerShare = Math.abs(entryPrice - finalStop);
+        const stopDistancePct = entryPrice > 0 ? (riskPerShare / entryPrice) * 100 : 0;
+        const structuralStopInATR = atrDollars > 0 ? rawRiskPerShare / atrDollars : 0;
+        const finalStopInATR = atrDollars > 0 ? riskPerShare / atrDollars : 0;
+
+        return {
+            hasATR: true,
+            atrDollars,
+            finalStop,
+            riskPerShare,
+            stopDistancePct,
+            structuralStopInATR,
+            finalStopInATR
+        };
+    }
+
+    // Gate A - stop placement. Blocking: a stop inside ~1 ATR of entry sits within normal daily noise.
+    evaluateGateA(finalStopInATR) {
+        if (finalStopInATR === null || finalStopInATR === undefined) return null;
+
+        if (finalStopInATR < 1.0) {
+            return { status: 'block', message: "Stop sits inside one day's normal range. It will be hit on an ordinary retest. Do not enter." };
+        } else if (finalStopInATR < 1.5) {
+            return { status: 'pass', message: '' };
+        } else if (finalStopInATR <= 2.0) {
+            return { status: 'warn', message: 'Stop is wide. Position size will be small - this is correct, not conservative.' };
+        } else {
+            return { status: 'warn', message: 'Stop is far from entry. Structure is loose; the setup has not tightened.' };
+        }
+    }
+
+    // Gate B - setup quality. Non-blocking: an expanding daily range means the pivot hasn't contracted yet.
+    evaluateGateB(atrPercent, stopDistancePct) {
+        if (atrPercent === null || atrPercent === undefined) return null;
+
+        if (atrPercent > 5 || stopDistancePct > 6) {
+            return {
+                status: 'warn',
+                message: 'Not a contracted pivot. Daily range is expanding, not tightening. VCP requires contraction into the buy point - consider waiting.'
+            };
+        }
+        return null;
     }
 
     getOriginalPositionSizingFormula(accountSize, maxPositions, entryPrice) {
@@ -172,7 +228,7 @@ class PositionCalculator {
         if (riskResult.cappedByMaxPosition) {
             resultAnnotation = '(capped at 25% of account)';
         } else if (riskResult.exceedsPositionLimit) {
-            resultAnnotation = `(risk-based — exceeds 1/${maxPositions} slot: ${riskResult.positionLimitShares} shares)`;
+            resultAnnotation = `(risk-based - exceeds 1/${maxPositions} slot: ${riskResult.positionLimitShares} shares)`;
         } else {
             resultAnnotation = '(risk-based)';
         }
@@ -182,56 +238,6 @@ class PositionCalculator {
             calculation: `MIN[$${riskBasedPositionValue.toLocaleString(undefined, {maximumFractionDigits: 0})}, $${maxPositionCapValue.toLocaleString(undefined, {maximumFractionDigits: 0})}] = $${effectiveValue.toLocaleString(undefined, {maximumFractionDigits: 0})} | 1/${maxPositions} slot: $${positionLimitValue.toLocaleString(undefined, {maximumFractionDigits: 0})}`,
             result: `${riskResult.shares} shares ${resultAnnotation}`
         };
-    }
-
-    getATRMultiplier(atrPercent) {
-        if (atrPercent < 6) {
-            return 1.0;
-        } else if (atrPercent >= 6 && atrPercent <= 8) {
-            return 0.8;
-        } else {
-            return atrPercent > 10 ? 0.6 : 0.7;
-        }
-    }
-
-    calculateATRAdjustedPosition(riskCalculatedShares, entryPrice, atrPercent) {
-        const atrMultiplier = this.getATRMultiplier(atrPercent);
-        const atrShares = Math.floor(riskCalculatedShares * atrMultiplier);
-        const atrPositionValue = atrShares * entryPrice;
-        const positionDifference = atrShares - riskCalculatedShares;
-        const volatilityImpact = this.getVolatilityImpact(atrMultiplier);
-        
-        return {
-            atrPercent: atrPercent,
-            atrMultiplier: atrMultiplier,
-            atrShares: atrShares,
-            atrPositionValue: atrPositionValue,
-            positionDifference: positionDifference,
-            volatilityImpact: volatilityImpact,
-            recommendation: this.getATRRecommendation(atrPercent)
-        };
-    }
-
-    getVolatilityImpact(atrMultiplier) {
-        if (atrMultiplier === 1.0) {
-            return 'No Change';
-        } else if (atrMultiplier < 1.0) {
-            return 'Reduced';
-        } else {
-            return 'Increased';
-        }
-    }
-
-    getATRRecommendation(atrPercent) {
-        if (atrPercent < 6) {
-            return 'Low volatility - Full position size';
-        } else if (atrPercent >= 6 && atrPercent <= 8) {
-            return 'Medium volatility - Reduced position (80%)';
-        } else if (atrPercent > 8 && atrPercent <= 10) {
-            return 'High volatility - Reduced position (70%)';
-        } else {
-            return 'Very high volatility - Minimal position (60%)';
-        }
     }
 
     formatCurrency(amount) {
@@ -313,16 +319,22 @@ class PositionCalculator {
             return { errors };
         }
 
+        // structuralStop is the raw structure level (§2). The ATR buffer produces finalStop,
+        // which replaces structuralStop in every downstream sizing/risk/target calculation (§3).
+        const structuralStop = stopLoss;
+        const atrBuffer = this.calculateATRBuffer(entryPrice, structuralStop, atrPercent, positionType);
+        const finalStop = atrBuffer.finalStop;
+
         // Original position sizing (for Standard Position Size section)
-        const originalShares = this.calculatePositionSize(entryPrice, stopLoss, accountSize, maxPositions);
+        const originalShares = this.calculatePositionSize(entryPrice, finalStop, accountSize, maxPositions);
         const originalTotalPositionValue = originalShares * entryPrice;
         const originalPositionPercentage = this.calculatePositionPercentage(originalTotalPositionValue, accountSize);
-        const originalDollarRiskAmount = this.calculateRiskAmount(entryPrice, stopLoss, originalShares);
+        const originalDollarRiskAmount = this.calculateRiskAmount(entryPrice, finalStop, originalShares);
         const originalRiskPercentOfAccount = (originalDollarRiskAmount / accountSize) * 100;
-        
+
         // Risk-based position sizing (for Risk Calculation section)
         const portfolioRisk = this.calculatePortfolioRisk(accountSize, riskPercent);
-        const riskResult = this.calculateRiskBasedPositionSize(entryPrice, stopLoss, accountSize, riskPercent, maxPositions);
+        const riskResult = this.calculateRiskBasedPositionSize(entryPrice, finalStop, accountSize, riskPercent, maxPositions);
         const suggestedRiskShares = riskResult.shares;
 
         // Manual override: when set, the chosen share count drives every share-dependent value below.
@@ -330,20 +342,21 @@ class PositionCalculator {
         const riskShares = riskSharesOverridden ? riskSharesOverride : suggestedRiskShares;
         const riskTotalPositionValue = riskShares * entryPrice;
         const riskPositionPercentage = this.calculatePositionPercentage(riskTotalPositionValue, accountSize);
-        const riskDollarRiskAmount = this.calculateRiskAmount(entryPrice, stopLoss, riskShares);
+        const riskDollarRiskAmount = this.calculateRiskAmount(entryPrice, finalStop, riskShares);
         const riskRiskPercentOfAccount = (riskDollarRiskAmount / accountSize) * 100;
-        
+
         // Common calculations
-        const riskPerShare = Math.abs(entryPrice - stopLoss);
+        const riskPerShare = atrBuffer.riskPerShare;
+        const stopDistancePct = atrBuffer.stopDistancePct;
         const maxPositionValue = accountSize / maxPositions;
         const maxPositionPercentage = this.calculatePositionPercentage(maxPositionValue, accountSize);
-        const targetPrice = this.calculateTargetPrice(entryPrice, stopLoss, 5);
-        const stopRiskPercent = this.calculateStopRiskPercent(entryPrice, stopLoss);
+        const targetPrice = this.calculateTargetPrice(entryPrice, finalStop, 5);
+        const stopRiskPercent = stopDistancePct;
         const expectedGainPercent = this.calculateExpectedGainPercent(entryPrice, targetPrice);
-        
-        const positionSizingFormula = this.getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, stopLoss, maxPositions, riskResult);
-        const atrAdjustedPosition = this.calculateATRAdjustedPosition(riskShares, entryPrice, atrPercent);
-        const positionValidation = this.validatePositionRange(entryPrice, stopLoss);
+
+        const positionSizingFormula = this.getRiskBasedPositionSizingFormula(accountSize, riskPercent, entryPrice, finalStop, maxPositions, riskResult);
+        const gateA = this.evaluateGateA(atrBuffer.finalStopInATR);
+        const gateB = this.evaluateGateB(atrPercent, stopDistancePct);
 
         return {
             // Original position sizing (Standard Position Size section)
@@ -376,8 +389,17 @@ class PositionCalculator {
             expectedGainPercent,
             portfolioRisk,
             positionSizingFormula,
-            atrAdjustedPosition,
-            positionValidation,
+
+            // ATR buffer (§3-§6)
+            hasATR: atrBuffer.hasATR,
+            structuralStop,
+            finalStop,
+            atrDollars: atrBuffer.atrDollars,
+            stopDistancePct,
+            structuralStopInATR: atrBuffer.structuralStopInATR,
+            finalStopInATR: atrBuffer.finalStopInATR,
+            gateA,
+            gateB,
             formatted: {
                 // Original position sizing
                 originalShares: this.formatShares(originalShares),
@@ -405,10 +427,12 @@ class PositionCalculator {
                 expectedGainPercent: `${expectedGainPercent.toFixed(2)}%`,
                 portfolioRiskPercent: `${portfolioRisk.riskPercent}%`,
                 portfolioRiskAmount: this.formatCurrency(portfolioRisk.riskAmount),
-                atrShares: this.formatShares(atrAdjustedPosition.atrShares),
-                atrPositionValue: this.formatCurrency(atrAdjustedPosition.atrPositionValue),
-                positionDifference: atrAdjustedPosition.positionDifference.toString(),
-                volatilityImpact: atrAdjustedPosition.volatilityImpact
+
+                // ATR buffer
+                finalStop: this.formatCurrency(finalStop),
+                stopDistancePct: `${stopDistancePct.toFixed(2)}%`,
+                structuralStopInATR: atrBuffer.structuralStopInATR !== null ? `${atrBuffer.structuralStopInATR.toFixed(2)} ATR` : '-',
+                finalStopInATR: atrBuffer.finalStopInATR !== null ? `${atrBuffer.finalStopInATR.toFixed(2)} ATR` : '-'
             }
         };
     }
