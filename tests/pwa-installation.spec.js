@@ -641,7 +641,7 @@ test.describe('PWA Installation - Platform-Specific Behavior', () => {
       // Verify manual install instructions are shown
       const instructions = page.locator('.install-instructions.android');
       await expect(instructions).toBeVisible();
-      await expect(instructions).toContainText('Install This App');
+      await expect(instructions).toContainText('Install This App', { timeout: 10000 }); // 8s + 1s buffer
       await expect(instructions).toContainText('Tap the menu button');
       await expect(instructions).toContainText('⋮');
 

@@ -6,7 +6,7 @@
  */
 
 // Configuration constants for beforeinstallprompt timing
-const PROMPT_WAIT_TIMEOUT = 5000; // Wait up to 5 seconds for beforeinstallprompt
+const PROMPT_WAIT_TIMEOUT = 8000; // Wait up to 8 seconds for beforeinstallprompt (increased from 5000ms)
 const PROMPT_CHECK_INTERVAL = 100; // Check every 100ms
 
 class PWAInstaller {
@@ -37,12 +37,19 @@ class PWAInstaller {
         this.bindElements();
         await this.registerServiceWorker();
         await this.waitForServiceWorkerReady();
+        await this.waitForServiceWorkerControlling(); // New: wait for control
         this.attachEventListeners();
         this.initEngagementTracking();
         this.initAutoPrompt();
 
         // Subscribe to manager state changes
         this.manager.onStateChange((state) => {
+            // If engagement increased and prompt not available, retry check
+            if (state.engagementScore > 10 && !state.hasDeferredPrompt) {
+                console.log('[PWA] Engagement detected, re-checking prompt availability');
+                this.checkForLatePrompt();
+            }
+
             this.updateUI(state);
 
             // If prompt becomes available while modal is open, update instructions
@@ -198,6 +205,7 @@ class PWAInstaller {
                     scope: new URL('./', window.location.href).href
                 });
 
+                window.__pwaDebug.swRegistrationTime = Date.now();
                 console.log('[PWAInstaller] Service worker registered successfully:', registration.scope);
 
                 registration.addEventListener('updatefound', () => {
@@ -239,6 +247,46 @@ class PWAInstaller {
                 console.error('[PWAInstaller] Service worker ready check failed');
                 resolve(false);
             });
+        });
+    }
+
+    async waitForServiceWorkerControlling(timeoutMs = 3000) {
+        if (!('serviceWorker' in navigator)) return false;
+
+        const startTime = Date.now();
+
+        return new Promise((resolve) => {
+            // Already controlling
+            if (navigator.serviceWorker.controller) {
+                const elapsed = Date.now() - window.__pwaDebug.scriptLoadTime;
+                window.__pwaDebug.swControllingTime = Date.now();
+                console.log(`[PWA] SW controlling page after ${elapsed}ms`);
+                resolve(true);
+                return;
+            }
+
+            // Listen for controllerchange
+            const handleController = () => {
+                if (navigator.serviceWorker.controller) {
+                    window.__pwaDebug.swControllingTime = Date.now();
+                    const elapsed = Date.now() - startTime;
+                    console.log(`[PWA] SW took control after ${elapsed}ms wait`);
+                    navigator.serviceWorker.removeEventListener('controllerchange', handleController);
+                    resolve(true);
+                }
+            };
+
+            navigator.serviceWorker.addEventListener('controllerchange', handleController);
+
+            // Timeout fallback
+            setTimeout(() => {
+                navigator.serviceWorker.removeEventListener('controllerchange', handleController);
+                const isControlling = !!navigator.serviceWorker.controller;
+                if (!isControlling) {
+                    console.warn('[PWA] SW not controlling after timeout - may need page reload');
+                }
+                resolve(isControlling);
+            }, timeoutMs);
         });
     }
 
@@ -454,7 +502,22 @@ class PWAInstaller {
             return;
         }
 
-        // WAITING PATH: Show modal with loading state
+        // iOS PATH: Never waits for prompt, show instructions immediately
+        if (state.platform === 'iOS') {
+            console.log('[PWAInstaller] iOS detected, showing instructions immediately');
+            this.showInstallModal();
+            return;
+        }
+
+        // HTTP PATH: Can't install on HTTP, show error immediately
+        const isHTTPS = window.__TEST_HTTPS__ || window.location.protocol === 'https:';
+        if (!isHTTPS) {
+            console.log('[PWAInstaller] HTTP detected, showing error immediately');
+            this.showInstallModal();
+            return;
+        }
+
+        // WAITING PATH: Show modal with loading state (Android/Desktop on HTTPS)
         console.log('[PWAInstaller] No prompt yet, showing waiting state...');
         this.showInstallModal(true); // Skip updateModalInstructions
         this.showWaitingForPromptState();
@@ -529,19 +592,64 @@ class PWAInstaller {
     showWaitingForPromptState() {
         if (!this.pwaInstructions) return;
 
-        this.pwaInstructions.innerHTML = `
-            <div class="install-instructions android waiting">
-                <h3>Checking Installation...</h3>
-                <div class="loading-spinner"></div>
-                <p class="waiting-message">Please wait while we check if your device supports direct installation.</p>
-                <p class="waiting-hint">This usually takes a few seconds...</p>
-            </div>
-        `;
+        // Clear any existing interval
+        if (this._waitingInterval) {
+            clearInterval(this._waitingInterval);
+        }
+
+        let elapsed = 0;
+        const updateInterval = setInterval(() => {
+            elapsed += 100;
+            const seconds = (elapsed / 1000).toFixed(1);
+
+            let message = 'Checking if your device supports direct installation...';
+            if (elapsed > 2000) {
+                message = 'Still checking... This can take a few moments on some devices.';
+            }
+            if (elapsed > 5000) {
+                message = 'Almost there... Preparing installation options.';
+            }
+
+            this.pwaInstructions.innerHTML = `
+                <div class="install-instructions android waiting">
+                    <h3>Checking Installation...</h3>
+                    <div class="loading-spinner"></div>
+                    <p class="waiting-message">${message}</p>
+                    <p class="waiting-hint">${seconds}s elapsed</p>
+                    ${elapsed > 3000 ? '<button class="skip-wait-btn">Skip Wait & Show Instructions</button>' : ''}
+                </div>
+            `;
+
+            // Handle skip button
+            if (elapsed > 3000) {
+                const skipBtn = this.pwaInstructions.querySelector('.skip-wait-btn');
+                if (skipBtn && !skipBtn.dataset.listenerAttached) {
+                    skipBtn.dataset.listenerAttached = 'true';
+                    skipBtn.onclick = () => {
+                        clearInterval(updateInterval);
+                        this._waitingInterval = null;
+                        this.updateModalInstructions();
+                    };
+                }
+            }
+        }, 100);
+
+        this._waitingInterval = updateInterval;
 
         if (this.pwaInstallAction) {
             this.pwaInstallAction.textContent = 'Checking...';
             this.pwaInstallAction.disabled = true;
             this.pwaInstallAction.setAttribute('data-action', 'waiting');
+        }
+    }
+
+    async checkForLatePrompt() {
+        // Give Chrome 500ms to fire prompt after engagement
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        if (this.manager.getState().hasDeferredPrompt) {
+            console.log('[PWA] Prompt became available after engagement!');
+            this.updateInstallButtonVisibility();
         }
     }
 
@@ -565,6 +673,12 @@ class PWAInstaller {
 
         this.pwaModal.classList.add('hidden');
 
+        // Clear waiting interval if active
+        if (this._waitingInterval) {
+            clearInterval(this._waitingInterval);
+            this._waitingInterval = null;
+        }
+
         // Reset iOS scroll prevention
         document.body.classList.remove('modal-open');
         document.body.style.position = '';
@@ -574,6 +688,12 @@ class PWAInstaller {
 
     updateModalInstructions() {
         if (!this.pwaInstructions) return;
+
+        // Clear waiting interval if it's running
+        if (this._waitingInterval) {
+            clearInterval(this._waitingInterval);
+            this._waitingInterval = null;
+        }
 
         const state = this.manager.getState();
         const isIOS = state.platform === 'iOS';
@@ -718,7 +838,7 @@ class PWAInstaller {
                 `;
                 buttonAction = 'hidden';
             } else {
-                // Browser supports PWA, show manual install instructions immediately
+                // Browser supports PWA, show manual install instructions
                 instructionHTML = `
                     <div class="install-instructions android">
                         <h3>Install This App</h3>
@@ -733,6 +853,7 @@ class PWAInstaller {
                                 <li>Tap <strong>"Install"</strong> to confirm</li>
                             </ol>
                         </div>
+                        <p class="hint">💡 Tip: If the menu option doesn't appear, try using the app for a moment first.</p>
                     </div>
                 `;
                 buttonText = '✓ I\'ve installed it';
@@ -961,4 +1082,24 @@ document.addEventListener('DOMContentLoaded', () => {
         isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
         isStandalone: window.matchMedia('(display-mode: standalone)').matches
     });
+
+    // Expose debug command for console
+    window.pwaDebug = () => {
+        const diag = window.pwaInstaller.manager.getDetailedDiagnostics();
+        console.log('=== PWA INSTALLATION DIAGNOSTICS ===');
+        console.log('Status:', diag.status);
+        console.log('Platform:', diag.platform, '/', diag.browser);
+        console.log('Prompt Available:', diag.beforeInstallPromptFired);
+        console.log('\nTiming (ms since load):');
+        if (diag.timing) {
+            console.table(diag.timing);
+        }
+        console.log('\nEngagement:');
+        console.table(diag.engagement);
+        console.log('\nBlockers:', diag.blockers);
+        console.log('\nChrome Checks:', diag.chromeChecks);
+        return diag;
+    };
+
+    console.log('💡 Tip: Run pwaDebug() in console for installation diagnostics');
 });

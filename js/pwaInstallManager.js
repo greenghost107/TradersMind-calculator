@@ -66,11 +66,13 @@ class PWAInstallManager {
      * @private
      */
     _setupEventListeners() {
+        window.__pwaDebug.managerInitTime = Date.now();
+
         // Check if prompt was already captured by early inline script in <head>
         if (window.deferredInstallPrompt) {
+            const captureDelay = Date.now() - window.__pwaDebug.promptCaptureTime;
             console.log('[PWAInstallManager] Using early-captured prompt from',
-                window.deferredInstallPromptCaptureTime,
-                '(', Date.now() - window.deferredInstallPromptCaptureTime, 'ms ago)');
+                captureDelay, 'ms ago');
             this._deferredPrompt = window.deferredInstallPrompt;
             this._isInstallable = true;
             this._isShowingPrompt = false;
@@ -82,14 +84,17 @@ class PWAInstallManager {
 
         // Still attach listener for any late-arriving prompts (e.g., after engagement)
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('[PWAInstallManager] beforeinstallprompt event captured (late)');
-            console.log('[PWAInstallManager] Platform:', this._platform);
+            const timeSinceLoad = Date.now() - window.__pwaDebug.scriptLoadTime;
+            console.log('[PWAInstallManager] Late beforeinstallprompt at', timeSinceLoad, 'ms');
             e.preventDefault();
             this._deferredPrompt = e;
             this._isInstallable = true;
             this._isShowingPrompt = false;
             this._notifyStateChange();
         });
+
+        // Periodic check for missed prompt (safety net)
+        this._startPromptMonitoring();
 
         // Listen for appinstalled
         window.addEventListener('appinstalled', () => {
@@ -109,6 +114,33 @@ class PWAInstallManager {
                 this._checkInstallationStatus();
             }
         });
+    }
+
+    _startPromptMonitoring() {
+        let checks = 0;
+        const maxChecks = 30; // 3 seconds at 100ms intervals
+
+        const checkInterval = setInterval(() => {
+            checks++;
+
+            if (checks >= maxChecks) {
+                clearInterval(checkInterval);
+                if (!this._deferredPrompt) {
+                    console.log('[PWA] No beforeinstallprompt after 3s - may require engagement');
+                }
+                return;
+            }
+
+            // Check if we missed it
+            if (window.deferredInstallPrompt && !this._deferredPrompt) {
+                console.warn('[PWA] Found missed prompt during monitoring!');
+                this._deferredPrompt = window.deferredInstallPrompt;
+                this._isInstallable = true;
+                window.deferredInstallPrompt = null;
+                this._notifyStateChange();
+                clearInterval(checkInterval);
+            }
+        }, 100);
     }
 
     /**
@@ -681,6 +713,54 @@ class PWAInstallManager {
                 diag.blockers.push('Browser does not support install prompts');
             }
         }
+
+        return diag;
+    }
+
+    /**
+     * Get detailed diagnostics with timing information
+     * @returns {Object} Detailed diagnostic information
+     */
+    getDetailedDiagnostics() {
+        const diag = this.getInstallDiagnostics(); // Existing method
+
+        // Add timing information
+        if (window.__pwaDebug) {
+            const debug = window.__pwaDebug;
+            diag.timing = {
+                scriptLoadTime: debug.scriptLoadTime,
+                promptCaptureTime: debug.promptCaptureTime,
+                promptCaptureDelay: debug.promptCaptureTime
+                    ? debug.promptCaptureTime - debug.scriptLoadTime
+                    : null,
+                swRegistrationTime: debug.swRegistrationTime,
+                swRegistrationDelay: debug.swRegistrationTime
+                    ? debug.swRegistrationTime - debug.scriptLoadTime
+                    : null,
+                swActiveTime: debug.swActiveTime,
+                swControllingTime: debug.swControllingTime,
+                managerInitTime: debug.managerInitTime,
+                managerInitDelay: debug.managerInitTime
+                    ? debug.managerInitTime - debug.scriptLoadTime
+                    : null,
+                timeSinceLoad: Date.now() - debug.scriptLoadTime
+            };
+        }
+
+        // Add engagement information
+        diag.engagement = {
+            score: this._engagementScore,
+            events: this._engagementEvents || [],
+            sessionDuration: (Date.now() - this._sessionStart) / 1000
+        };
+
+        // Add Chrome-specific checks
+        diag.chromeChecks = {
+            hasUserGesture: document.hasStoredUserActivation || null,
+            isInFrame: window !== window.top,
+            visibilityState: document.visibilityState,
+            hasFocus: document.hasFocus()
+        };
 
         return diag;
     }

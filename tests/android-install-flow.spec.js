@@ -73,7 +73,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         await expect(instructions).toContainText('Checking Installation');
 
         // After timeout, should show manual install instructions (NOT "Installation Available Soon")
-        await expect(instructions).toContainText('Install This App', { timeout: 6000 });
+        await expect(instructions).toContainText('Install This App', { timeout: 10000 }); // 8s + 1s buffer
         await expect(instructions).toContainText('Tap the menu button');
         await expect(instructions).toContainText('⋮');
         await expect(instructions).not.toContainText('Installation Available Soon');
@@ -126,7 +126,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
 
         // Wait for loading state to complete and manual instructions to show
         const instructions = page.locator('#pwa-instructions');
-        await expect(instructions).toContainText('Tap the menu button', { timeout: 6000 });
+        await expect(instructions).toContainText('Tap the menu button', { timeout: 10000 }); // 8s + 1s buffer
 
         // User follows instructions and taps confirmation
         const confirmButton = page.locator('#pwa-install-action');
@@ -185,7 +185,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
         // Either shows loading state OR already loaded (both are acceptable)
         if (content.includes('Checking Installation') || content.includes('Installation Loading')) {
             // Wait for timeout to complete and show manual instructions
-            await testPage.waitForTimeout(5500);
+            await testPage.waitForTimeout(8500); // 8s + 500ms buffer
 
             // Should update to show install instructions
             const updatedContent = await instructions.textContent();
@@ -218,7 +218,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
 
         const instructions = page.locator('#pwa-instructions');
         // Wait for loading state to complete
-        await expect(instructions).toContainText('Install This App', { timeout: 6000 });
+        await expect(instructions).toContainText('Install This App', { timeout: 10000 }); // 8s + 1s buffer
         await expect(instructions).toContainText('Tap the menu button');
     });
 
@@ -235,7 +235,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
 
         // Wait for loading state to complete and manual instructions to show
         // Step 1: Menu button
-        await expect(instructions).toContainText('Tap the menu button', { timeout: 6000 });
+        await expect(instructions).toContainText('Tap the menu button', { timeout: 10000 }); // 8s + 1s buffer
         await expect(instructions).toContainText('⋮');
         await expect(instructions).toContainText('(top right corner)');
 
@@ -271,7 +271,7 @@ test.describe('Android Install Flow - Real User Behavior', () => {
 
         // Verify instructions still correct
         const instructions = page.locator('#pwa-instructions');
-        await expect(instructions).toContainText('Install This App');
+        await expect(instructions).toContainText('Install This App', { timeout: 10000 }); // 8s + 1s buffer
         await expect(instructions).toContainText('Tap the menu button');
     });
 
